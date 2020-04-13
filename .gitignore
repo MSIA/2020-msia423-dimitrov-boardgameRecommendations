@@ -13,3 +13,4 @@ data/*
 !data/external/
 config/local
 !.gitkeep
+.RHistory
