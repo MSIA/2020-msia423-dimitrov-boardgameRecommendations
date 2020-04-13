@@ -1,8 +1,10 @@
-# MSiA423 Template Repository
+# MSiA423 - Analytics Value Chain - Boardgame Recommendations
+## Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly 
 
 <!-- toc -->
 
 - [Directory structure](#directory-structure)
+- [Project Charter](#project-charter)
 - [Running the app](#running-the-app)
   * [1. Initialize the database](#1-initialize-the-database)
     + [Create the database with a single song](#create-the-database-with-a-single-song)
