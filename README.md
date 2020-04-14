@@ -57,11 +57,11 @@ Several Kaggle datasets containing ratings, reviews, and other game information:
 <img src="figures/backlogStructure.png" alt="backlogStructure" width="170" height="110"/>
 
 Note: Sizing for each Story is present in {brackets}
-0 points - quick chore;
-1 point ~ 1 hour (small);
-2 points ~ 1/2 day (medium);
-4 points ~ 1 day (large);
-8 points - big and needs to be broken down more when it comes to execution
+0 points - quick chore;  
+1 point ~ 1 hour (small);  
+2 points ~ 1/2 day (medium);  
+4 points ~ 1 day (large);  
+8 points - big and needs to be broken down more when it comes to execution.
 
 __Test Hypothesis: Boardgames can be categorized based on a few key characteristics and metrics. This will help us understand the landscape better and provide more adequate recommendations.__
 - Source, Ingest and clean all 4 datasets
