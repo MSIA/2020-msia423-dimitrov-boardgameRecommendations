@@ -50,29 +50,53 @@ Several Kaggle datasets containing ratings, reviews, and other game information:
 - Statistical
   - Average RMSE of user ratings via cross-validation
   - Rank based metrics capturing relative preference: mRR, mAP, nDCG
+  - % of variation explained (for Principal Components Analysis)
   - Clustering SSE (if the current categorization of games is not adequate)
 
 ## Project Backlog
-##### Initiatives --> Epics --> Stories
-- Source, Ingest all 4 datasets
-  - Download & import datasets
-  - Analyze missing values & outliers
-  - Remove irrelevant attributes and combine datasets where relevant
+<img src="figures/backlogStructure.png" alt="backlogStructure" width="170" height="110"/>
+
+Note: Sizing for each Story is present in {brackets}
+0 points - quick chore;
+1 point ~ 1 hour (small);
+2 points ~ 1/2 day (medium);
+4 points ~ 1 day (large);
+8 points - big and needs to be broken down more when it comes to execution
+
+__Test Hypothesis: Boardgames can be categorized based on a few key characteristics and metrics. This will help us understand the landscape better and provide more adequate recommendations.__
+- Source, Ingest and clean all 4 datasets
+  - Download & import datasets {1}
+  - Analyze missing values & outliers {1}
+  - Remove irrelevant attributes and combine datasets where relevant {2}
 - Investigate Main characteristics of boardgames via Dimensionality Reduction
-  - Apply & Evaluate Principal Components Analysis
-  - Apply & Evaluate Exploratory Factor Analysis
-  - Generate new features based on previous output
-- Investigate utility of current categorization. Is there a better, more natural categorization of boardgames, as opposed to the current categorization?
-  - Apply & Evaluate K-Means and Gaussian Mixture Clustering
-  - Apply & Evaluate Hierarchical clustering with different linkage methods (Average/Single/Complete)
+  - Apply & Evaluate Principal Components Analysis {4}
+  - Apply & Evaluate Exploratory Factor Analysis {4}
+  - Generate new features based on previous output {2}
+- Investigate utility of current categorization. Is there a better, more natural segmentation of boardgames, as opposed to the current categorization?
+  - Apply & Evaluate K-Means and Gaussian Mixture Clustering {2}
+  - Apply & Evaluate Hierarchical clustering with different linkage methods (Average/Single/Complete) {2}
 
+__Make recommendations/predictions for boardgames the user will like.__
 - Build recommendation system
-  -
+  - Random & Popular (as benchmarks) {2}
+  - Content Based Filtering {8}
+  - User Based & Item Based Collaborative Filtering {8}
+  - Compare recommendation systems via Statistical measures of success {2}
 
+- Investigate Predictive Model as Alternative to Recommendation system
+  - Apply K-Nearest-Neighbours to show similar boardgames {4}
+  - Tune hyperparameter K {1}
+  - Experiment with alternative similarity measures {2}
 
-- Tune hyperparameters
--
+- Compare Recommendation System results with Predictive Model results
 
+## Project Icebox
+
+Visualize boardgame segmentation
+- Build a D3 Visualization for the clustering segmentation
+- Enable export of cluster segmentation
+
+Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tabletop/boardgame/) already exists online. Assumption is that it works via KNN.
 
 
 ## Directory structure
