@@ -22,25 +22,16 @@ import yaml
 import json
 import numpy as np
 import pandas as pd
+import argparse
 import logging
 import logging.config
 
 from boardgamegeek import BGGClient
 from boardgamegeek.exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
 
-# todo: add docstrings
-# todo: add exception handling
-# todo: outsource configurations
-
-# CONFIGURATIONS
-url = "https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv"
-requests_per_minute = 100
-batch_size = 100
-logging_level = "DEBUG"
-
-logging.config.fileConfig('../config/logging/local.conf')
+logging_config = '../config/logging/local.conf'
+logging.config.fileConfig(logging_config)
 logger = logging.getLogger('acquire.py')
-logger.setLevel(logging_level)
 
 # FUNCTIONS
 def fetch_game_ids(url: str) -> list:
@@ -57,7 +48,7 @@ def fetch_game_ids(url: str) -> list:
     ids = df['ID'].values
     return ids
 
-def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=100):
+def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=100) -> list:
     """Fetches games data in batches
 
     First fetches data one batch at a time. Then fetches one more batch with remainder_ids
@@ -123,7 +114,7 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
     return games
 
 
-def convert_game_to_dict(game):
+def convert_game_to_dict(game) -> dict:
     """Extract all useful information from a game object and return as a dictionary
 
     Args:
@@ -152,10 +143,23 @@ def convert_game_to_dict(game):
 
 
 if __name__ == "__main__":
+    # Setup CLI argument parser
+    parser = argparse.ArgumentParser(description="Fetches up-to-date data on 17,313 games from BoardGameGeek.com")
+    parser.add_argument('-c', '--config', help="Path to .yml (YAML) config file with module settings. Default: ../config/config.yml", default='../config/config.yml', type=str)
+    parser.add_argument('-o', '--output', help="Path to output of games.json. Default: ../data/external/games.json", default="../data/external/games.json", type=str)
+    # Parse CLI arguments
+    args = parser.parse_args()
+
+    # Load .yml config file
+    with open(args.config, 'r') as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    logger.info(f'Configuration file loaded from {args.config}')
+
     # Get the ids of 17,313 games
-    ids = fetch_game_ids(url)
+    ids = fetch_game_ids(**config['acquire']['fetch_game_ids'])
     # Fetch up-to-date data on these games from the BoardGameGeek XML API via the boardgamegeek wrapper
-    games = batch_api_call(ids)
+    games = batch_api_call(ids, **config['acquire']['batch_api_call'])
 
     # Extract the relevant data from the BoardGame objects and convert it to dictionaries
     dict_games = []
@@ -167,7 +171,7 @@ if __name__ == "__main__":
             logging.debug(f"Failed to convert to dict game with id {game.id}")
 
     # Save results to json
-    with open('games.json', 'w') as fp:
+    with open(args.output, 'w') as fp:
         json.dump(dict_games, fp)
 
 
