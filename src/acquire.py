@@ -1,6 +1,8 @@
 """
 This modules fetches up-to-date data on 17,313 games from BoardGameGeek.com (BGG) and writes it to a json file.
 
+You should expect it to take ~5-10 minutes. Thank you for your patience.
+
 It does this via a package called "boardgamegeek", which serves as a convenient wrapper for BGG's XML API2.
 
 See "notebooks/develop/Exploring_BGG_API_Wrapper.ipynb" for example usage of the wrapper.
@@ -29,7 +31,7 @@ import logging.config
 from boardgamegeek import BGGClient
 from boardgamegeek.exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
 
-logging_config = '../config/logging/local.conf'
+logging_config = './config/logging/local.conf'
 logging.config.fileConfig(logging_config)
 logger = logging.getLogger('acquire.py')
 
@@ -63,6 +65,11 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
         games (`list`): List of BoardGame objects. See boardgamegeek package documentation for details:
         https://lcosmin.github.io/boardgamegeek/modules.html#boardgamegeek.objects.games.BoardGame
     """
+    print('''
+    This should take ~5-10 minutes. 
+    Time to stretch your legs or get some coffee!
+    Thank you for your patience.
+    ''')
     # Instantiate API client
     bgg = BGGClient(requests_per_minute=requests_per_minute)
 
