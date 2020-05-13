@@ -57,7 +57,7 @@ def fetch_game_ids(url: str) -> list:
     ids = df['ID'].values
     return ids
 
-def batch_api_call(ids,batch_size=100):
+def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=100):
     """Fetches games data in batches
 
     First fetches data one batch at a time. Then fetches one more batch with remainder_ids
@@ -66,6 +66,7 @@ def batch_api_call(ids,batch_size=100):
     Args:
         ids (`numpy.array`): the game_ids to fetch data for
         batch_size (`int`): the size of the batches (Recommend to not exceed 100)
+        requests_per_minute (`int`): limit the number of requests of our API client
 
     Returns:
         games (`list`): List of BoardGame objects. See boardgamegeek package documentation for details:
