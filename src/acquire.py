@@ -32,8 +32,14 @@ from boardgamegeek import BGGClient
 from boardgamegeek.exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
 
 logging_config = './config/logging/local.conf'
-logging.config.fileConfig(logging_config)
-logger = logging.getLogger('acquire.py')
+
+try: # Set Logging configurations from file
+    logging.config.fileConfig(logging_config)
+except: # Fallback to basic configurations
+    logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
+logger = logging.getLogger(__file__)
 
 # FUNCTIONS
 def fetch_game_ids(url: str) -> list:

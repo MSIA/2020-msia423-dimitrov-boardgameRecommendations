@@ -6,4 +6,5 @@ acquire:
     requests_per_minute: 100
 
 upload:
-  bucket_url: s3://msia423-ktd5131-project-bucket
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'games.json'
