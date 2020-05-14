@@ -8,6 +8,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 config/aws_credentials.env
+config/.mysqlconfig
 
 data/*
 !data/sample/

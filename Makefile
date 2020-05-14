@@ -4,7 +4,7 @@ UPLOAD_PATH=data/external/games.json
 DOWNLOAD_PATH=data/games.json
 AWS_CREDENTIALS=config/aws_credentials.env
 
-.PHONY: upload_data raw_data_from_api build_docker_image
+.PHONY: download_data upload_data raw_data_from_api build_docker_image
 
 build_docker_image:
 	docker build -t python_env .
@@ -19,3 +19,7 @@ upload_data: raw_data_from_api config/config.yml build_docker_image
 
 download_data:
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/download.py -c=${CONFIG_PATH} -lfp=${DOWNLOAD_PATH}
+
+ingest_data:
+	source config/.mysqlconfig
+	docker run --env-file=${AWS_CREDENTIALS}
