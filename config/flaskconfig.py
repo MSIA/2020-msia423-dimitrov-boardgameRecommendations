@@ -1,12 +1,14 @@
-DEBUG = True
-LOGGING_CONFIG = "config/logging/local.conf"
-PORT = 5000
-APP_NAME = "penny-lane"
-SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'
-SQLALCHEMY_TRACK_MODIFICATIONS = True
-HOST = "0.0.0.0"
-SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-MAX_ROWS_SHOW = 100
+import os
+
+# DEBUG = True
+# LOGGING_CONFIG = "config/logging/local.conf"
+# PORT = 5000
+# APP_NAME = "boardgameRecommendations"
+# SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'
+# SQLALCHEMY_TRACK_MODIFICATIONS = True
+# HOST = "0.0.0.0"
+# SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
+# MAX_ROWS_SHOW = 100
 
 # Connection string
 DB_HOST = os.environ.get('MYSQL_HOST')
@@ -19,8 +21,6 @@ SQLALCHEMY_DATABASE_URI = os.environ.get('SQLALCHEMY_DATABASE_URI')
 if SQLALCHEMY_DATABASE_URI is not None:
     pass
 elif DB_HOST is None:
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///data/boardgames.db'
 else:
-    SQLALCHEMY_DATABASE_URI = '{dialect}://{user}:{pw}@{host}:{port}/{db}'.format(dialect=DB_DIALECT, user=DB_USER,
-                                                                                  pw=DB_PW, host=DB_HOST, port=DB_PORT,
-                                                                                  db=DATABASE)
+    SQLALCHEMY_DATABASE_URI = f'{DB_DIALECT}://{DB_USER}:{DB_PW}@{DB_HOST}:{DB_PORT}/{DATABASE}'
