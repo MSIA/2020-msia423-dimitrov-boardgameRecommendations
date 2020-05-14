@@ -12,6 +12,7 @@ import pandas as pd
 import argparse
 import logging
 import logging.config
+import traceback
 
 from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Float
 from sqlalchemy.orm import sessionmaker
@@ -36,12 +37,12 @@ class Boardgame(Base):
 
     __tablename__ = 'boardgames'
 
-    game_id = Column(String(100), primary_key=True, unique=True, nullable=False)
+    game_id = Column(String(50), primary_key=True, unique=True, nullable=False)
     name = Column(String(100), unique=False, nullable=False)
     image = Column(String(150), unique=False, nullable=True)
     thumbnail = Column(String(100), unique=False, nullable=True)
     description = Column(Text, unique=False, nullable=True)
-    year_published = Column(Date, unique=False, nullable=True)
+    year_published = Column(Integer, unique=False, nullable=True)
     min_age = Column(Integer, unique=False, nullable=True)
     number_of_ratings = Column(Integer, unique=False, nullable=True)
     average_user_rating = Column(Float, unique=False, nullable=True)
@@ -71,6 +72,7 @@ def validate(games: list) -> list:
         logger.error(f"Expected games to be a list; instead received type: {type(records)}. Returning None")
         return None
 
+    logger.info(f'Validating {len(games)} games')
     for game in games:
 
         # Check if game schema is valid
@@ -80,7 +82,7 @@ def validate(games: list) -> list:
             continue
 
         try: # Check if game_id exists and is a valid entry
-            float(game['game_id'])  # Using float, because int memory might not be enough
+            float(game['id'])  # Using float, because int memory might not be enough
         except ValueError:
             logger.debug(f"Encountered a game with invalid game_id")
             invalid_game_id += 1
@@ -96,6 +98,12 @@ def validate(games: list) -> list:
             logger.debug(f"Encountered a game, which doesn't have a name")
             missing_name += 1
             continue
+
+        # Check if year value is valid
+        if (game['year'] <=0) or (game['year'] >=2100):
+            logger.debug(f'Encountered game with negative or unrealistic year: {game["year"]}')
+            game['year'] = None
+
 
         # game passes validation checks
         validated_games.append(game)
@@ -118,6 +126,8 @@ def validate(games: list) -> list:
     else:
         logger.info("No games with missing names detected")
 
+    logger.info(f'{len(validated_games)} games passed validation checks')
+
     return validated_games
 
 ##############################
@@ -125,14 +135,14 @@ def validate(games: list) -> list:
 ##############################
 
 def create_db(args):
-    """Create table inside a database and create DB if it doesn't exist"""
+    """Create a DB if it doesn't exist and a table inside based on the defined SQLAlchemy ORM"""
 
     # Define Engine
     engine = create_engine(args.engine_string)
     # Create Database
     Base.metadata.create_all(engine)
 
-def get_session(engine=None, engine_string=None):
+def get_session(engine_string=None):
     """Returns a session to the provided SQL database
 
     Args:
@@ -141,16 +151,16 @@ def get_session(engine=None, engine_string=None):
     Returns:
         SQLAlchemy session
     """
-
-    if engine is None and engine_string is None:
-        return ValueError("`engine` or `engine_string` must be provided")
-    elif engine is None:
-        engine = create_connection(engine_string=engine_string)
-
+    logger.debug(f'Creating engine from engine_string={engine_string}')
+    engine = create_engine(engine_string)
     Session = sessionmaker(bind=engine)
     session = Session()
 
     return session
+
+def _truncate_boardgames(session):
+    """Deletes all entries in boardgames table if rerunning and run into unique key error."""
+    session.execute('''DELETE FROM boardgames''')
 
 ##############################
 ####### INGEST TO DB #########
@@ -162,28 +172,33 @@ def ingest(args):
     try:
         with open(args.local_filepath) as json_file:
             games=json.load(json_file)
+            logger.info(f"Successfully loaded data from {json_file.name}")
     except JSONDecodeError:
         logger.error(f'Failed to open {args.local_filepath}. Not a valid JSON file')
 
-    session=get_session(args.engine_string)
+    logger.debug(f'Creating Session to DB Engine String: {args.engine_string}')
+    session=get_session(engine_string=args.engine_string)
+
+    # Use the validate() function from above to check input
+    games=validate(games)
 
     # Check if games is a list
     if type(games) != list:
         logger.error(f"Expected games to be a list; instead received type: {type(games)}. Returning None")
         return None
 
-    logger.info(f"Persisting {len(games)} games to {session.connection().engine}")
+    logger.info(f"Persisting {len(games)} games to {args.engine_string}")
     successfully_added = 0
     not_added = 0
     for game in games:
         try:
             # Define a boardgame in the ORM
-            boardgame = Boardgame(game_id=game['id'],
+            boardgame = Boardgame(game_id=str(game['id']),
                                  name=game['name'],
                                  image=game['image'],
                                  thumbnail = game['thumbnail'],
                                  description=game['description'],
-                                 year_published=date(year=game['year'], month=1, day=1 ),
+                                 year_published=game['year'],
                                  min_age=game['min_age'],
                                  number_of_ratings=game['stats']['usersrated'],
                                  average_user_rating=game['stats']['average'],
@@ -191,7 +206,10 @@ def ingest(args):
                                  average_user_rating_weight=game['stats']['averageweight'],
                                  bayes_average=game['stats']['bayesaverage'])
             session.add(boardgame)
+            session.commit()
             successfully_added += 1
+            if successfully_added % 1000 == 0:
+                logger.info(f"Successfully persisted {successfully_added} boardgames")
         except ProgrammingError as err:
             not_added += 1
             logger.error('''Programming Error; possible reasons:
@@ -202,9 +220,8 @@ def ingest(args):
                 f"Error: {err}; game_id: {game['game_id']}, name: {game['name']} couldn't be added to session")
         except IntegrityError as err:
             not_added += 1
-            logger.error("Relational integrity of the database affected e.g. foreign key check fails")
-            logger.debug(
-                f"Error: {err}; game_id: {game['game_id']}, name: {game['name']} couldn't be added to session")
+            logger.error("Relational integrity of the database affected e.g. Primary key uniqueness or foreign key check fails")
+            logger.debug(f"Error: {err}; game_id: {game['id']}, name: {game['name']} couldn't be added to session")
         except InterfaceError as err:
             not_added += 1
             logger.error(
@@ -213,12 +230,9 @@ def ingest(args):
             logger.debug(
                 f"Error: {err}; game_id: {game['game_id']}, name: {game['name']} couldn't be added to session")
 
-    logger.info(f"Successfully added to session {successfully_added} sentiment records")
-    logger.info(f"Failed to add to session {not_added} sentiment records")
-
-    for game in games:
-        continue
-    pass
+    logger.info(f"Successfully added to session {successfully_added} games")
+    logger.info(f"Failed to add to session {not_added} games")
+    session.close()
 
 if __name__ == "__main__":
     # Setup CLI argument parser
@@ -233,10 +247,31 @@ if __name__ == "__main__":
 
     # Sub-parser for ingesting new data
     sb_ingest = subparsers.add_parser("ingest", description="Add data to database")
-    sb_ingest.add_argument("-lfp","--local_filepath", default="../data/games.json", help="Path to json data to be ingested into database")
-    sb_ingest.add_argument("--engine_string", default='sqlite:///data/tracks.db',
+    sb_ingest.add_argument("-lfp","--local_filepath", default="./data/games.json", help="Path to json data to be ingested into database")
+    sb_ingest.add_argument("--engine_string", default='sqlite:///data/boardgames.db',
                            help="SQLAlchemy connection URI for database")
+    sb_ingest.add_argument("-t", "--truncate", default=False, action="store_true",
+                        help="If given, delete current records from boardgames table before ingesting new data "
+                             "so that table can be recreated without unique id issues ")
     sb_ingest.set_defaults(func=ingest)
 
     args = parser.parse_args()
+
+    # If "truncate" is given as an argument (i.e. python ingest.py --truncate), then empty the boardgames table)
+    try:
+        if args.truncate:
+            session = get_session(engine_string=args.engine_string)
+            try:
+                logger.info("Attempting to truncate boardgames table.")
+                _truncate_boardgames(session)
+                session.commit()
+                logger.info("boardgames table truncated.")
+            except Exception as e:
+                logger.error("Error occurred while attempting to truncate boardgames table.")
+                logger.error(e)
+            finally:
+                session.close()
+    except AttributeError:
+        logging.info("--truncate can only be used with the ingest subcommand")
+
     args.func(args)
