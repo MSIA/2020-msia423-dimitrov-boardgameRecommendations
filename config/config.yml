@@ -5,3 +5,5 @@ acquire:
     batch_size: 100
     requests_per_minute: 100
 
+upload:
+  bucket_url: s3://msia423-ktd5131-project-bucket

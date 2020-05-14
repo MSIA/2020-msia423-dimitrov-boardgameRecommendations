@@ -65,11 +65,7 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
         games (`list`): List of BoardGame objects. See boardgamegeek package documentation for details:
         https://lcosmin.github.io/boardgamegeek/modules.html#boardgamegeek.objects.games.BoardGame
     """
-    print('''
-    This should take ~5-10 minutes. 
-    Time to stretch your legs or get some coffee!
-    Thank you for your patience.
-    ''')
+
     # Instantiate API client
     bgg = BGGClient(requests_per_minute=requests_per_minute)
 
@@ -166,6 +162,7 @@ if __name__ == "__main__":
     # Get the ids of 17,313 games
     ids = fetch_game_ids(**config['acquire']['fetch_game_ids'])
     # Fetch up-to-date data on these games from the BoardGameGeek XML API via the boardgamegeek wrapper
+    # Expected time to completion: ~5 minutes. Time to stretch your legs or get some coffee!
     games = batch_api_call(ids, **config['acquire']['batch_api_call'])
 
     # Extract the relevant data from the BoardGame objects and convert it to dictionaries
