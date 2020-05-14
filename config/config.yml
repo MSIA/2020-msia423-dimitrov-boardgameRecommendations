@@ -8,3 +8,7 @@ acquire:
 upload:
   bucket_name: 'msia423-ktd5131-project-bucket'
   key: 'games.json'
+
+download:
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'games.json'

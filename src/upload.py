@@ -1,8 +1,7 @@
 """This module uploads a file to an s3 bucket
 
-You can pass the local filepath of the file you want to upload via the [-lfp --local_filepath optional command line argument
-Alternatively, you can set the path in the config/config.yml file.
-
+You can pass the local filepath of the file you want to upload via the [-lfp --local_filepath] optional command line argument
+Otherwise default: data/external/games.json
 """
 
 import boto3
