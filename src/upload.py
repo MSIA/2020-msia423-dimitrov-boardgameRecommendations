@@ -44,7 +44,7 @@ def upload_file_to_bucket(bucket_name, local_filepath, key):
 
 if __name__ == "__main__":
     # Setup CLI argument parser
-    parser = argparse.ArgumentParser(description="Fetches up-to-date data on 17,313 games from BoardGameGeek.com")
+    parser = argparse.ArgumentParser(description="Uploads a file to an S3 bucket")
     parser.add_argument('-c', '--config',
                         help="Path to .yml (YAML) config file with module settings. Default: ../config/config.yml",
                         default='../config/config.yml', type=str)
