@@ -3,7 +3,7 @@
 
 <!-- toc -->
 
-- [Jump to recreating the app](#running-the-app-in-docker)
+- [Jump to recreating the app](#running-the-app)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
