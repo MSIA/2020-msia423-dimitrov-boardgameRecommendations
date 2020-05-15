@@ -12,7 +12,6 @@ import pandas as pd
 import argparse
 import logging
 import logging.config
-import traceback
 
 from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Float
 from sqlalchemy.orm import sessionmaker
@@ -37,11 +36,17 @@ class Boardgame(Base):
 
     __tablename__ = 'boardgames'
 
-    game_id = Column(String(50), primary_key=True, unique=True, nullable=False)
-    name = Column(String(100), unique=False, nullable=False)
+    # Need to add collation argument for two of the columns to avoid odd warnings when uploading to MySQL in RDS
+    # Those warnings are most likely related to UTF-8 characters which need 4 instead of 3 bytes to be stored.
+    # SQLAlchemy Documentation: https://docs.sqlalchemy.org/en/13/core/type_basics.html#sqlalchemy.types.String.__init__
+    # MySQL Documentation: https://dev.mysql.com/doc/refman/8.0/en/charset-unicode-utf8mb4.html
+    # StackOverflow Thread: https://stackoverflow.com/questions/10957238/incorrect-string-value-when-trying-to-insert-utf-8-into-mysql-via-jdbc
+
+    game_id = Column(String(100), primary_key=True, unique=True, nullable=False)
+    name = Column(String(200), unique=False, nullable=False) # Collation Needed
     image = Column(String(150), unique=False, nullable=True)
     thumbnail = Column(String(100), unique=False, nullable=True)
-    description = Column(Text, unique=False, nullable=True)
+    description = Column(Text, unique=False, nullable=True) # Collation Needed
     year_published = Column(Integer, unique=False, nullable=True)
     min_age = Column(Integer, unique=False, nullable=True)
     number_of_ratings = Column(Integer, unique=False, nullable=True)
@@ -99,12 +104,6 @@ def validate(games: list) -> list:
             missing_name += 1
             continue
 
-        # Check if year value is valid
-        if (game['year'] <=0) or (game['year'] >=2100):
-            logger.debug(f'Encountered game with negative or unrealistic year: {game["year"]}')
-            game['year'] = None
-
-
         # game passes validation checks
         validated_games.append(game)
 
@@ -138,6 +137,7 @@ def create_db(args):
     """Create a DB if it doesn't exist and a table inside based on the defined SQLAlchemy ORM"""
 
     # Define Engine
+    logger.debug(f'Creating engine from Engine String: {args.engine_string}')
     engine = create_engine(args.engine_string)
     # Create Database
     Base.metadata.create_all(engine)
@@ -188,6 +188,7 @@ def ingest(args):
         return None
 
     logger.info(f"Persisting {len(games)} games to {args.engine_string}")
+    logger.info(f"This will take approximately 15 minutes. Thank you for your patience.")
     successfully_added = 0
     not_added = 0
     for game in games:
@@ -248,7 +249,7 @@ if __name__ == "__main__":
     # Sub-parser for ingesting new data
     sb_ingest = subparsers.add_parser("ingest", description="Add data to database")
     sb_ingest.add_argument("-lfp","--local_filepath", default="./data/games.json", help="Path to json data to be ingested into database")
-    sb_ingest.add_argument("--engine_string", default='sqlite:///data/boardgames.db',
+    sb_ingest.add_argument("--engine_string", default=SQLALCHEMY_DATABASE_URI,
                            help="SQLAlchemy connection URI for database")
     sb_ingest.add_argument("-t", "--truncate", default=False, action="store_true",
                         help="If given, delete current records from boardgames table before ingesting new data "
@@ -257,7 +258,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # If "truncate" is given as an argument (i.e. python ingest.py --truncate), then empty the boardgames table)
+    # Avoid error when using the create_db sub command
     try:
         if args.truncate:
             session = get_session(engine_string=args.engine_string)
@@ -272,6 +273,6 @@ if __name__ == "__main__":
             finally:
                 session.close()
     except AttributeError:
-        logging.info("--truncate can only be used with the ingest subcommand")
+        pass
 
     args.func(args)

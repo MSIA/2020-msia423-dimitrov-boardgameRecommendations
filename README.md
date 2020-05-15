@@ -3,25 +3,20 @@
 
 <!-- toc -->
 
-- [Directory structure](#directory-structure)
+- [Jump to recreating the app](#running-the-app-in-docker)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
   * [Mission](#mision)
   * [Success Criteria](#success-criteria)
 - [Project Backlog](#project-backlog)
-- [Running the app](#running-the-app)
-  * [1. Initialize the database](#1-initialize-the-database)
-    + [Create the database with a single song](#create-the-database-with-a-single-song)
-    + [Adding additional songs](#adding-additional-songs)
-    + [Defining your engine string](#defining-your-engine-string)
-      - [Local SQLite database](#local-sqlite-database)
-  * [2. Configure Flask app](#2-configure-flask-app)
-  * [3. Run the Flask app](#3-run-the-flask-app)
+- [Project Icebox](#project-icebox)
+- [Directory Structure](#directory-structure)
 - [Running the app in Docker](#running-the-app-in-docker)
+  * [0. Make sure you're on the Northwestern VPN](#0-make-sure-youre-on-the-northwestern-vpn)
   * [1. Build the image](#1-build-the-image)
-  * [2. Run the container](#2-run-the-container)
-  * [3. Kill the container](#3-kill-the-container)
+  * [2. SQLite](#2-acquire--ingest-data-locally-sqlite)
+  * [3. RDS MySQL](#3-kill-the-container)
 
 <!-- tocstop -->
 
@@ -144,35 +139,45 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ```
 
 ## Running the app
-### 1. Initialize the database
+### 0. Make sure you're on the Northwestern VPN
 
-#### Create the database with a single song
-To create the database in the location configured in `config.py` with one initial song, run:
+### 1. Build Docker Image
+In the root directory of the project
+```bash
+docker build -t python_env .
+```
+### 2. Acquire & Ingest data locally (SQLite)
 
-`python run.py create_db --engine_string=<engine_string> --artist=<ARTIST> --title=<TITLE> --album=<ALBUM>`
+To run the entire pipeline and produce a local SQLite database:
 
-By default, `python run.py create_db` creates a database at `sqlite:///data/tracks.db` with the initial song *Radar* by Britney spears.
-#### Adding additional songs
+Set your AWS credentials in config/aws_credentials.env. Then:
+
+```bash
+make create_db_sqlite
+```
+Expected result: data/boardgames.db should be created
+
+#### Acquire data from BoardGameGeek.com via API
+
+```bash
+make raw_data_from_api
+```
+The default filepath is `data/external/games.json`. 
+You can change it by specifying `make raw_data_from_api OUTPUT_PATH=<filepath>`.
+IMPORTANT: If you change the path, you will have to change specify paths for subsequent steps. **Not recommended**.
+NOTE: If you *insist* on changing the path, it has to be relative to src/acquire.py
+
+The API is called via a wrapper package called [boardgamegeek2](https://lcosmin.github.io/boardgamegeek/modules.html)
+You can specify the `batch_size` and `requests_per_minute` for the API client in `config/config.yml`
+However, the defaults (100 for both) are recommended, because BoardGameGeek throttles excessive requests.
+
+Finally, you can specify a different config.yml file like this: `make raw_data_from_api CONFIG_PATH=<filepath>`.
+NOTE: If you do, the path has to be relative to `src/acquire.py` 
+
+#### Upload to S3 bucket
 To add an additional song:
 
-`python run.py ingest --engine_string=<engine_string> --artist=<ARTIST> --title=<TITLE> --album=<ALBUM>`
 
-By default, `python run.py ingest` adds *Minor Cause* by Emancipator to the SQLite database located in `sqlite:///data/tracks.db`.
-
-#### Defining your engine string
-A SQLAlchemy database connection is defined by a string with the following format:
-
-`dialect+driver://username:password@host:port/database`
-
-The `+dialect` is optional and if not provided, a default is used. For a more detailed description of what `dialect` and `driver` are and how a connection is made, you can see the documentation [here](https://docs.sqlalchemy.org/en/13/core/engines.html). We will cover SQLAlchemy and connection strings in the SQLAlchemy lab session on
-##### Local SQLite database
-
-A local SQLite database can be created for development and local testing. It does not require a username or password and replaces the host and port with the path to the database file:
-
-```python
-engine_string='sqlite:///data/tracks.db'
-
-```
 
 The three `///` denote that it is a relative path to where the code is being run (which is from the root of this directory).
 
