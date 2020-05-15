@@ -150,7 +150,14 @@ docker build -t python_env .
 ```
 ### 2. Acquire & Ingest data locally (SQLite)
 
-To run the entire pipeline and produce a local SQLite database:
+As an example, the original data files are included in the repo.
+To start fresh and get up-to-date data:
+```bash
+make clean
+```
+This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
+
+Then, to run the entire pipeline and produce a local SQLite database:
 
 - Set your AWS credentials in `config/aws_credentials.env`.
 - Specify the S3 bucket to upload/download from in `config/config.yml`.
