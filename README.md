@@ -13,10 +13,12 @@
 - [Project Icebox](#project-icebox)
 - [Directory Structure](#directory-structure)
 - [Running the app in Docker](#running-the-app-in-docker)
-  * [0. Make sure you're on the Northwestern VPN](#0-make-sure-youre-on-the-northwestern-vpn)
+  * [0. Make sure you're on the Northwestern VPN](#0-connect-to-northwestern-vpn)
   * [1. Build the image](#1-build-the-image)
   * [2. SQLite](#2-acquire--ingest-data-locally-sqlite)
-  * [3. RDS MySQL](#3-kill-the-container)
+  * [3. RDS MySQL](#3-acquire--ingest-data-to-rds)
+  * [4. Configurations](#4-other-configurations)
+  * [5. References](#5-references)
 
 <!-- tocstop -->
 
@@ -139,7 +141,7 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ```
 
 ## Running the app
-### 0. Make sure you're on the Northwestern VPN
+### 0. Connect to Northwestern VPN
 
 ### 1. Build Docker Image
 In the root directory of the project
@@ -150,101 +152,73 @@ docker build -t python_env .
 
 To run the entire pipeline and produce a local SQLite database:
 
-Set your AWS credentials in config/aws_credentials.env. Then:
+- Set your AWS credentials in `config/aws_credentials.env`.
+- Specify the S3 bucket to upload/download from in `config/config.yml`.
+- Finally:
 
 ```bash
-make create_db_sqlite
+make ingest_data_sqlite
 ```
-Expected result: data/boardgames.db should be created
+Expected Time to Completion: ~10 minutes.
 
-#### Acquire data from BoardGameGeek.com via API
+Expected result: data/boardgames.db should be created.
+What's happening?
+- Data Retrieved via API and saved to `data/external/games.json`.
+- Data is uploaded to S3 bucket as `games.json`.
+- Data is downloaded from S3 bucket to `data/games.json`.
+- SQLite database is created with table called: `boardgames`.
+- Data is ingested into the SQLite database.
 
+### 3. Acquire & Ingest data to RDS
+
+To run the entire pipeline and produce a populated RDS database:
+- If you've ran the previous step and want to test from scratch do:
 ```bash
-make raw_data_from_api
+make clean
 ```
-The default filepath is `data/external/games.json`. 
-You can change it by specifying `make raw_data_from_api OUTPUT_PATH=<filepath>`.
-IMPORTANT: If you change the path, you will have to change specify paths for subsequent steps. **Not recommended**.
-NOTE: If you *insist* on changing the path, it has to be relative to src/acquire.py
+This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
 
-The API is called via a wrapper package called [boardgamegeek2](https://lcosmin.github.io/boardgamegeek/modules.html)
-You can specify the `batch_size` and `requests_per_minute` for the API client in `config/config.yml`
-However, the defaults (100 for both) are recommended, because BoardGameGeek throttles excessive requests.
-
-Finally, you can specify a different config.yml file like this: `make raw_data_from_api CONFIG_PATH=<filepath>`.
-NOTE: If you do, the path has to be relative to `src/acquire.py` 
-
-#### Upload to S3 bucket
-To add an additional song:
-
-
-
-The three `///` denote that it is a relative path to where the code is being run (which is from the root of this directory).
-
-You can also define the absolute path with four `////`, for example:
-
-```python
-engine_string = 'sqlite://///Users/cmawer/Repos/2020-MSIA423-template-repository/data/tracks.db'
-```
-
-
-### 2. Configure Flask app
-
-`config/flaskconfig.py` holds the configurations for the Flask app. It includes the following configurations:
-
-```python
-DEBUG = True  # Keep True for debugging, change to False when moving to production
-LOGGING_CONFIG = "config/logging/local.conf"  # Path to file that configures Python logger
-HOST = "0.0.0.0" # the host that is running the app. 0.0.0.0 when running locally
-PORT = 5000  # What port to expose app on. Must be the same as the port exposed in app/Dockerfile
-SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'  # URI (engine string) for database that contains tracks
-APP_NAME = "penny-lane"
-SQLALCHEMY_TRACK_MODIFICATIONS = True
-SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-MAX_ROWS_SHOW = 100 # Limits the number of rows returned from the database
-```
-
-### 3. Run the Flask app
-
-To run the Flask app, run:
-
+- Configure your RDS variables in `config/.mysqlconfig`. Then:
 ```bash
-python app.py
+source config/.mysqlconfig
 ```
-
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
-
-## Running the app in Docker
-
-### 1. Build the image
-
-The Dockerfile for running the flask app is in the `app/` folder. To build the image, run from this directory (the root of the repo):
-
+- Make sure you've entered your AWS credentials in `config/aws_credentials.env`.
+- Make sure you've specified your S3 bucket for upload/download in `config/config.yml`
+- Finally
 ```bash
- docker build -f app/Dockerfile -t pennylane .
+make ingest_data_rds
 ```
+Expected Time to Completion: ~15 minutes, but varies b/w 10 and 20.
 
-This command builds the Docker image, with the tag `pennylane`, based on the instructions in `app/Dockerfile` and the files existing in this directory.
+Expected Result: `mysql> SELECT * FROM boardgames;` should return all data (~17,311 rows)
+What's happening?
+- Data Retrieved via API and saved to `data/external/games.json`.
+- Data is uploaded to S3 bucket as `games.json`.
+- Data is downloaded from S3 bucket to `data/games.json`.
+- MySQL database is created on your RDS instance with a table called: `boardgames`.
+- Data is ingested into the SQLite database.
 
-### 2. Run the container
+### 4. Other Configurations
 
-To run the app, run from this directory:
+- The Makefile gives several shorthands for executing intermediate steps in each workflow (SQLite & RDS)
+* `make raw_data_from_api` acquires data from API to local system
+* `make upload_data` uploads data to S3 bucket specified in config/config.yml
+* `make download_data` downloads data from S3 bucket specified in config/config.yml
+* `make create_db_sqlite` creates `data/boardgames.db` (but doesn't ingest data).
+* `make create_db_rds` creates the `boardgames` in the RDS instance specified in `config/.mysqlconfig` (but doesn't ingest data).
+- You can modify the default filepaths for the `make` commands:
+* `OUTPUT_PATH=<where to place data from API>`. Default: `data/external/games.json`.
+* `UPLOAD_PATH=<where is the file to be uploaded to S3>`. Default: `data/external/games.json`. 
+* `DOWNLOAD_PATH=<where to download the data from S3>`. Default: `data/games.json`.
+* `AWS_CREDENTIALS=<where to look for AWS key & secret key`. Default: `config/aws_credentials.env`.
+* `CONFIG_PATH=<where to look for config.yml>`. Default: `config/config.yml`.
+- You can change the `batch_size` & `requests_per_minute` parameters of the API client. 
+This, however, is not recommended, because BoardGameGeek throttles excessive requests.
+The defauts (100 for both variables) should be sufficient.
 
-```bash
-docker run -p 5000:5000 --name test pennylane
-```
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
+### 5. References
 
-This command runs the `pennylane` image as a container named `test` and forwards the port 5000 from container to your laptop so that you can access the flask app exposed through that port.
+- [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
+- [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
 
-If `PORT` in `config/flaskconfig.py` is changed, this port should be changed accordingly (as should the `EXPOSE 5000` line in `app/Dockerfile`)
 
-### 3. Kill the container
-
-Once finished with the app, you will need to kill the container. To do so:
-
-```bash
-docker kill test
-```
-
-where `test` is the name given in the `docker run` command.

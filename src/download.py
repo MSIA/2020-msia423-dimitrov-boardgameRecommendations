@@ -9,6 +9,7 @@ import argparse
 import logging
 import logging.config
 import yaml
+import time
 
 # todo: Exception Handling
 
@@ -29,6 +30,9 @@ def download_file_from_bucket(bucket_name, key, local_filepath,):
         key (`str`): The name of the file on S3
         local_filepath (`str`): The path to download the file to
     '''
+    # Wait 10 seconds to make sure file is completely uploaded and available in S3 bucket
+    logger.info("Waiting 10 seconds to make sure file is completely uploaded and available in S3 bucket")
+    time.sleep(10)
     # Connect to S3
     s3 = boto3.resource('s3')
     logger.debug('Connected to S3')

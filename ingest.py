@@ -21,7 +21,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from config.flaskconfig import SQLALCHEMY_DATABASE_URI
 
 Base = declarative_base()
-
+logging_config='config/logging/local.conf'
 try: # Set Logging configurations from file
     logging.config.fileConfig(logging_config)
 except: # Fallback to basic configurations
