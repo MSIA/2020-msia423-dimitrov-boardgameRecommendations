@@ -137,7 +137,7 @@ def create_db(args):
     """Create a DB if it doesn't exist and a table inside based on the defined SQLAlchemy ORM"""
 
     # Define Engine
-    logger.debug(f'Creating engine from Engine String: {args.engine_string}')
+    logger.debug(f'Creating engine from Engine String')
     engine = create_engine(args.engine_string)
     # Create Database
     Base.metadata.create_all(engine)
@@ -151,7 +151,7 @@ def get_session(engine_string=None):
     Returns:
         SQLAlchemy session
     """
-    logger.debug(f'Creating engine from engine_string={engine_string}')
+    logger.debug(f'Creating engine from Engine_string')
     engine = create_engine(engine_string)
     Session = sessionmaker(bind=engine)
     session = Session()
