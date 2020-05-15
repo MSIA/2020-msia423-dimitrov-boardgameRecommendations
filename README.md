@@ -184,7 +184,7 @@ source config/.mysqlconfig
 ```
 - Make sure you've entered your AWS credentials in `config/aws_credentials.env`.
 - Make sure you've specified your S3 bucket for upload/download in `config/config.yml`
-- Finally
+- Finally:
 ```bash
 make ingest_data_rds
 ```
