@@ -3,7 +3,7 @@
 
 <!-- toc -->
 
-- [Jump to recreating the app](#running-the-app)
+- [JUMP TO RECREATING THE APP](#running-the-app)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
@@ -141,7 +141,7 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ```
 
 ## Running the app
-### 0. Connect to Northwestern VPN
+### 0. Connect to Northwestern VPN and make sure Docker is running.
 
 ### 1. Build Docker Image
 In the root directory of the project
@@ -160,7 +160,8 @@ This will delete `data/external/games.json`, `data/games.json`, and `data/boardg
 Then, to run the entire pipeline and produce a local SQLite database:
 
 - Set your AWS credentials in `config/aws_credentials.env`.
-- Specify the S3 bucket to upload/download from in `config/config.yml`.
+- Specify the S3 bucket to upload to in `config/config.yml`.
+- Specify the S3 bucket to download from in `config/config.yml`. In most cases, this should be the same as the upload bucket.
 - Finally:
 
 ```bash
