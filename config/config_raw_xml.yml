@@ -1,0 +1,14 @@
+acquire:
+  fetch_game_ids:
+    url: "https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv"
+  batch_api_call:
+    batch_size: 100
+    requests_per_minute: 100
+
+upload:
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'raw_data.xml'
+
+download:
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'raw_data.xml'

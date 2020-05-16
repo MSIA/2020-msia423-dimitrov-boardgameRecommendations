@@ -94,6 +94,8 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
             game_batch = bgg.game_list(batch)
             batches_successful += 1
             logger.debug(f"Successfully fetched games in batch number {batch_number}")
+            if batches_successful % 10 == 0:
+                logger.info(f'Successfully fetched games for {batches_successful} batches')
             games.extend(game_batch)
         except BGGApiError:
             batches_failed += 1

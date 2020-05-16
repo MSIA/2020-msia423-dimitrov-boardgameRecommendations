@@ -17,8 +17,9 @@
   * [1. Build the image](#1-build-the-image)
   * [2. SQLite](#2-acquire--ingest-data-locally-sqlite)
   * [3. RDS MySQL](#3-acquire--ingest-data-to-rds)
-  * [4. Configurations](#4-other-configurations)
-  * [5. References](#5-references)
+  * [4. Raw API Data](#4-raw-api-data)
+  * [5. Configurations](#4-other-configurations)
+  * [6. References](#5-references)
 
 <!-- tocstop -->
 
@@ -186,7 +187,10 @@ make clean
 ```
 This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
 
-- Configure your RDS variables in `config/.mysqlconfig`. Then:
+- Configure your RDS variables in `config/.mysqlconfig`. 
+- Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance. 
+- If it doesn't, create it: mysql> `CREATE DATABASE <MYSQL_DATABASE>`
+- Then:
 ```bash
 source config/.mysqlconfig
 ```
@@ -206,7 +210,26 @@ What's happening?
 - MySQL database is created on your RDS instance with a table called: `boardgames`.
 - Data is ingested into the SQLite database.
 
-### 4. Other Configurations
+### 4. Raw API data 
+
+The raw data from the API is included in the repo. More specifically:
+- Game ids for 17,313 games from [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
+- Raw XML response data as retrieved from [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
+- If you want to get up-to-date raw XML responses, first delete the current data by doing:
+```bash
+make clean_raw_data
+```
+This will remove `data/game_ids.txt` & `data/raw_data.xml`.  
+Then, do:
+```bash
+make raw_xml
+```
+Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket, do:
+```bash
+make upload_raw_data
+```
+
+### 5. Other Configurations
 
 - The Makefile gives several shorthands for executing intermediate steps in each workflow (SQLite & RDS)
 * `make raw_data_from_api` acquires data from API to local system
@@ -223,10 +246,11 @@ What's happening?
 - You can change the `batch_size` & `requests_per_minute` parameters of the API client. 
 This, however, is not recommended, because BoardGameGeek throttles excessive requests.
 The defauts (100 for both variables) should be sufficient.
-
-### 5. References
+- You can change the logging level in `config/logging/local.conf`. Default: `INFO`
+### 6. References
 
 - [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
 - [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
+- [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
 
 
