@@ -18,8 +18,9 @@
   * [2. SQLite](#2-acquire--ingest-data-locally-sqlite)
   * [3. RDS MySQL](#3-acquire--ingest-data-to-rds)
   * [4. Raw API Data](#4-raw-api-data)
-  * [5. Configurations](#4-other-configurations)
-  * [6. References](#5-references)
+  * [5. Querying my RDS Instance](#5-querying-my-rds-instance)
+  * [6. Configurations](#4-other-configurations)
+  * [7. References](#5-references)
 
 <!-- tocstop -->
 
@@ -228,8 +229,21 @@ Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket
 ```bash
 make upload_raw_data
 ```
+### 5. Querying my RDS Instance
+If you want to get the boardgames data from my RDS instance then you will need to:
+- Have me tell you my RDS host
+- Have me create a user & password with SELECT privilages for my database
+- Enter this values in `config/.mysqlconfig` and do:
+```bash
+source config/.mysqlconfig
+```
+- Finally, to establish a connection with my RDS instance, do:
+```bash
+docker run -it --rm mysql:latest mysql -h${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PASSWORD}
+```
+Expected result: You should see a `mysql>` prompt and `SHOW DATABASES` should list `msia423_first_db`.
 
-### 5. Other Configurations
+### 6. Other Configurations
 
 - The Makefile gives several shorthands for executing intermediate steps in each workflow (SQLite & RDS)
 * `make raw_data_from_api` acquires data from API to local system
@@ -247,7 +261,7 @@ make upload_raw_data
 This, however, is not recommended, because BoardGameGeek throttles excessive requests.
 The defauts (100 for both variables) should be sufficient.
 - You can change the logging level in `config/logging/local.conf`. Default: `INFO`
-### 6. References
+### 7. References
 
 - [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
 - [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
