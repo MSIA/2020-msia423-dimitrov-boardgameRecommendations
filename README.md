@@ -225,10 +225,13 @@ Then, do:
 ```bash
 make raw_xml
 ```
-Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket, do:
+Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket:
+- You will need to set your S3 bucket's name in `config/config_game_ids.yml` and `config/config_raw_xml.yml`.
+- Then:
 ```bash
 make upload_raw_data
 ```
+
 ### 5. Querying my RDS Instance
 If you want to get the boardgames data from my RDS instance then you will need to:
 - Have me tell you my RDS host
