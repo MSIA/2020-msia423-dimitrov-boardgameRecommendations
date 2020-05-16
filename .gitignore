@@ -10,7 +10,6 @@ __pycache__/
 config/aws_credentials.env
 config/.mysqlconfig
 
-data/*
 !data/sample/
 !data/external/*
 config/local
