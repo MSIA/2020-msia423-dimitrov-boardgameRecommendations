@@ -233,7 +233,7 @@ make upload_raw_data
 If you want to get the boardgames data from my RDS instance then you will need to:
 - Have me tell you my RDS host
 - Have me create a user & password with SELECT privilages for my database
-- Enter this values in `config/.mysqlconfig` and do:
+- Enter these values in `config/.mysqlconfig` and do:
 ```bash
 source config/.mysqlconfig
 ```
