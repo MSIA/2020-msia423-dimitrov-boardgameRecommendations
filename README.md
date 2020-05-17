@@ -29,7 +29,7 @@
 More people playing boardgames they love.
 
 ### Problem Statement
-The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec). In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_. With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world. 
+The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec). In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_. With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world.
 
 ### Mission
 Provide a personalized boardgame recommendation system, which helps people discover games they will enjoy.
@@ -148,7 +148,9 @@ There are 3 workflows implemented via a Makefile:
 - Acquire & Ingest data to RDS
 - Raw API data  
 Here is a graph representation of these workflows:  
-<img src="figures/diagram.png" alt="diagram.png" width="1200" height="110"/>
+<img src="figures/diagram.png" alt="diagram.png" height="250"/>
+
+Note: the arrows represent dependencies. The workflow starts from the left and progresses to the right.
 
 ### 0. Connect to Northwestern VPN and make sure Docker is running.
 
@@ -195,8 +197,8 @@ make clean
 ```
 This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
 
-- Configure your RDS variables in `config/.mysqlconfig`. 
-- Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance. 
+- Configure your RDS variables in `config/.mysqlconfig`.
+- Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance.
 - If it doesn't, create it: mysql> `CREATE DATABASE <MYSQL_DATABASE>`
 - Then:
 ```bash
@@ -218,7 +220,7 @@ What's happening?
 - MySQL database is created on your RDS instance with a table called: `boardgames`.
 - Data is ingested into the SQLite database.
 
-### 4. Raw API data 
+### 4. Raw API data
 
 The raw data from the API is included in the repo. More specifically:
 - `data/game_ids.txt`: Game ids for 17,313 games from [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
@@ -263,11 +265,11 @@ Expected result: You should see a `mysql>` prompt and `SHOW DATABASES` should li
 * `make create_db_rds` creates the `boardgames` in the RDS instance specified in `config/.mysqlconfig` (but doesn't ingest data).
 - You can modify the default filepaths for the `make` commands:
 * `OUTPUT_PATH=<where to place data from API>`. Default: `data/external/games.json`.
-* `UPLOAD_PATH=<where is the file to be uploaded to S3>`. Default: `data/external/games.json`. 
+* `UPLOAD_PATH=<where is the file to be uploaded to S3>`. Default: `data/external/games.json`.
 * `DOWNLOAD_PATH=<where to download the data from S3>`. Default: `data/games.json`.
 * `AWS_CREDENTIALS=<where to look for AWS key & secret key`. Default: `config/aws_credentials.env`.
 * `CONFIG_PATH=<where to look for config.yml>`. Default: `config/config.yml`.
-- You can change the `batch_size` & `requests_per_minute` parameters of the API client. 
+- You can change the `batch_size` & `requests_per_minute` parameters of the API client.
 This, however, is not recommended, because BoardGameGeek throttles excessive requests.
 The defauts (100 for both variables) should be sufficient.
 - You can change the logging level in `config/logging/local.conf`. Default: `INFO`
@@ -276,5 +278,3 @@ The defauts (100 for both variables) should be sufficient.
 - [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
 - [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
 - [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
-
-
