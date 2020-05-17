@@ -143,6 +143,13 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ```
 
 ## Running the app
+There are 3 workflows implemented via a Makefile:
+- Acquire & Ingest data locally (SQLite)
+- Acquire & Ingest data to RDS
+- Raw API data  
+Here is a graph representation of these workflows:  
+<img src="figures/diagram.png" alt="diagram.png" width="1200" height="110"/>
+
 ### 0. Connect to Northwestern VPN and make sure Docker is running.
 
 ### 1. Build Docker Image
