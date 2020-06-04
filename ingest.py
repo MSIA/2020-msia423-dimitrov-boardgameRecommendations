@@ -12,6 +12,7 @@ import pandas as pd
 import argparse
 import logging
 import logging.config
+import sys
 
 from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Float
 from sqlalchemy.orm import sessionmaker
@@ -54,6 +55,8 @@ class Boardgame(Base):
     number_of_ratings_weight = Column(Integer, unique=False, nullable=True)
     average_user_rating_weight = Column(Float, unique=False, nullable=True)
     bayes_average = Column(Float, unique=False, nullable=True)
+    number_of_users_own = Column(Integer, unique=False, nullable=True)
+    cluster = Column(Integer, unique=False, nullable=True)
 
     def __repr__(self):
         game_repr = f"<Boardgame(game_id={self.game_id}, name={self.name})>"
@@ -66,7 +69,9 @@ class Boardgame(Base):
 def validate(games: list) -> list:
     """This function validates boardgames before they are ingested"""
 
-    expected_schema = {'id', 'name', 'stats', 'image', 'thumbnail', 'artists', 'designers', 'year', 'description', 'categories', 'mechanics', 'min_age', 'publishers'}
+    expected_schema = {'id', 'name', 'image', 'thumbnail', 'artists', 'designers', 'year', 'description', 'categories',
+                       'mechanics', 'min_age', 'publishers', 'number_of_user_weight_ratings', 'average_user_weight_rating',
+                       'number_of_user_ratings', 'average_user_rating', 'bayes_average', 'number_of_users_own', 'cluster'}
     unexpected_schema_count=0
     invalid_game_id=0
     missing_name=0
@@ -74,7 +79,7 @@ def validate(games: list) -> list:
 
     # Check if games is a list
     if type(games) != list:
-        logger.error(f"Expected games to be a list; instead received type: {type(records)}. Returning None")
+        logger.error(f"Expected games to be a list; instead received type: {type(games)}. Returning None")
         return None
 
     logger.info(f'Validating {len(games)} games')
@@ -195,22 +200,29 @@ def ingest(args):
         try:
             # Define a boardgame in the ORM
             boardgame = Boardgame(game_id=str(game['id']),
-                                 name=game['name'],
-                                 image=game['image'],
-                                 thumbnail = game['thumbnail'],
-                                 description=game['description'],
-                                 year_published=game['year'],
-                                 min_age=game['min_age'],
-                                 number_of_ratings=game['stats']['usersrated'],
-                                 average_user_rating=game['stats']['average'],
-                                 number_of_ratings_weight=game['stats']['numweights'],
-                                 average_user_rating_weight=game['stats']['averageweight'],
-                                 bayes_average=game['stats']['bayesaverage'])
+                                  name=game['name'],
+                                  image=game['image'],
+                                  thumbnail = game['thumbnail'],
+                                  description=game['description'],
+                                  year_published=game['year'],
+                                  min_age=game['min_age'],
+                                  number_of_ratings=game['number_of_user_ratings'],
+                                  average_user_rating=game['average_user_rating'],
+                                  number_of_ratings_weight=game['number_of_user_weight_ratings'],
+                                  average_user_rating_weight=game['average_user_weight_rating'],
+                                  bayes_average=game['bayes_average'],
+                                  number_of_users_own=game['number_of_users_own'],
+                                  cluster=game['cluster'])
             session.add(boardgame)
-            session.commit()
             successfully_added += 1
+
+            # Commit batches of 100 games
+            if successfully_added % 100 == 0:
+                session.commit()
+
             if successfully_added % 1000 == 0:
                 logger.info(f"Successfully persisted {successfully_added} boardgames")
+
         except ProgrammingError as err:
             not_added += 1
             logger.error('''Programming Error; possible reasons:
@@ -231,6 +243,9 @@ def ingest(args):
             logger.debug(
                 f"Error: {err}; game_id: {game['game_id']}, name: {game['name']} couldn't be added to session")
 
+    # Adding any remaining sessions, which were not in a batch of 100 records
+    session.commit()
+
     logger.info(f"Successfully added to session {successfully_added} games")
     logger.info(f"Failed to add to session {not_added} games")
     session.close()
@@ -248,7 +263,7 @@ if __name__ == "__main__":
 
     # Sub-parser for ingesting new data
     sb_ingest = subparsers.add_parser("ingest", description="Add data to database")
-    sb_ingest.add_argument("-lfp","--local_filepath", default="./data/games.json", help="Path to json data to be ingested into database")
+    sb_ingest.add_argument("-lfp","--local_filepath", default="./data/games_clustered.json", help="Path to json data to be ingested into database")
     sb_ingest.add_argument("--engine_string", default=SQLALCHEMY_DATABASE_URI,
                            help="SQLAlchemy connection URI for database")
     sb_ingest.add_argument("-t", "--truncate", default=False, action="store_true",
