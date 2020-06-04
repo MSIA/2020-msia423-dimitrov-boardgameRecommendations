@@ -18,3 +18,8 @@ featurize:
   index_categories: 12
   # This is the index at which the one-hot encoded mechanics start; See One-Hot notebook for details
   index_mechanics: 95
+
+model:
+  kmeans:
+    seed: 28
+    k: 250

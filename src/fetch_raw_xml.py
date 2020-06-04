@@ -60,12 +60,14 @@ if __name__ == "__main__":
     game_ids = load_txt(args.input)
 
     # Initialize XML root with first game_id on the list
+    # (I'm not exactly sure how to work with these XML objects, but initializing the list with the first game_id
+    # and then appending to that works)
     logger.debug('Calling XML API for first element in game_ids')
     root_start = call_xml_api(game_ids[0])
 
     # Go over the remaining game_ids and append to the XML root
     counter = 0
-    logger.info("Beginnig calls to XML API for all game_ids (except the first one).")
+    logger.info("Beginning calls to XML API for all game_ids (except the first one).")
     logger.info("This will take ~20 minutes. Thank you for your patience.")
     for game_id in game_ids[1:]:
         logger.debug(f'Calling XML API for game_id: {game_id}')

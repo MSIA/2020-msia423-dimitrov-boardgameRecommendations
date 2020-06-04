@@ -10,11 +10,13 @@ Overall, the data goes through 5 steps in order for a given feature to be proper
 The above steps are performed once for categories and once for mechanics.
 All the steps are combined into a wrapper function, which is called twice
 
+Finally, the relevant data in the 'stats' dictionary is extracted and the stats column is dropped
 """
 
 import argparse
 import json
 import logging
+import logging.config
 import sys
 
 import numpy as np
@@ -124,6 +126,25 @@ def wrapper(df, feature_name, index):
     logger.info(f'Completed wrapper function for {feature_name}')
     return df_with_feature
 
+
+def extract_stats(df):
+    """The 'stats' column in the df contains dictionaries
+    This function extracts the relevant information from those dictionaries and drops the stats column
+    """
+    logger.debug('Extracting stats into new columns from the "stats" column, which contains dictionaries columns')
+    df['number_of_user_ratings'] = df.apply(lambda row: row['stats']['usersrated'], axis=1)
+    df['average_user_rating'] = df.apply(lambda row: row['stats']['average'], axis=1)
+    df['number_of_user_weight_ratings'] = df.apply(lambda row: row['stats']['numweights'], axis=1)
+    df['average_user_weight_rating'] = df.apply(lambda row: row['stats']['averageweight'], axis=1)
+    df['bayes_average'] = df.apply(lambda row: row['stats']['bayesaverage'], axis=1)
+    df['number_of_users_own'] = df.apply(lambda row: row['stats']['owned'], axis=1)
+
+    logger.debug('Dropping stats column with dictionaries')
+    df = df.drop('stats', axis=1)
+    logger.info('Extracted stats into new columns')
+    return df
+
+
 if __name__ == "__main__":
     # Setup CLI argument parser
     parser = argparse.ArgumentParser(description="Creates One-hot encoded features for categories and mechanics from data/games.json")
@@ -161,8 +182,10 @@ if __name__ == "__main__":
     # Calling wrapper function to create mechanics features
     featurized_mechanics_data = wrapper(featurized_categories_data, 'mechanics', config['featurize']['index_mechanics'])
 
+    featurized_data = extract_stats(featurized_mechanics_data)
+
     # Converting back to dictionary so I can save as json
-    df_dict = featurized_mechanics_data.to_dict(orient='records')
+    df_dict = featurized_data.to_dict(orient='records')
 
     # Save results to json
     with open(args.output, 'w') as fp:

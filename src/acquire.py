@@ -74,6 +74,7 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
 
     # Instantiate API client
     bgg = BGGClient(requests_per_minute=requests_per_minute)
+    logger.info(f'Instantiated API client with  limit of {requests_per_minute} requests per minute.')
 
     # Form batches
     number_of_ids = len(ids)
@@ -88,6 +89,7 @@ def batch_api_call(ids: np.array, batch_size: int=100, requests_per_minute: int=
     batches_successful = 0
     batches_failed = 0
     games = []
+    logger.info(f'Beginning batch calls to BoardGameGeek API for {batch_size} games per batch.')
     for batch in batches:
         logger.debug(f"Fetching data for batch number {batch_number} / {len(batches)}")
         try:
