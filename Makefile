@@ -2,10 +2,11 @@ CONFIG_PATH=config/config.yml
 OUTPUT_PATH=data/external/games.json
 UPLOAD_PATH=data/external/games.json
 DOWNLOAD_PATH=data/games.json
+FEATURIZED_DATA_PATH=data/games_featurized.json
 AWS_CREDENTIALS=config/aws_credentials.env
 LOCAL_DATABASE_PATH="sqlite:///data/boardgames.db"
 
-.PHONY: truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
+.PHONY: truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
 
 data/external/games.json: config/config.yml
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/acquire.py -c=${CONFIG_PATH} -o=${OUTPUT_PATH}
@@ -19,6 +20,14 @@ data/games.json: upload_data
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/download.py -c=${CONFIG_PATH} -lfp=${DOWNLOAD_PATH}
 
 download_data: data/games.json
+
+
+### WORK IN PROGRESS
+data/games_featurized.json: download_data
+	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/featurize.py -i=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${FEATURIZED_DATA_PATH}
+featurize: data/games_featurized.json
+
+
 
 data/boardgames.db: download_data
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db --engine_string=${LOCAL_DATABASE_PATH}

@@ -12,3 +12,9 @@ upload:
 download:
   bucket_name: 'msia423-ktd5131-project-bucket'
   key: 'games.json'
+
+featurize:
+  # This is the index at which the one-hot encoded categories start; See One-Hot notebook for details
+  index_categories: 12
+  # This is the index at which the one-hot encoded mechanics start; See One-Hot notebook for details
+  index_mechanics: 95
