@@ -11,11 +11,13 @@ LOCAL_DATABASE_PATH="sqlite:///data/boardgames.db"
 
 .PHONY: truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite model featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
 
+### RAW JSON DATA FETCH
 data/external/games.json: config/config.yml
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/acquire.py -c=${CONFIG_PATH} -o=${OUTPUT_PATH}
 
 raw_data_from_api: data/external/games.json config/config.yml
 
+### S3 RELATED COMMANDS
 upload_data: raw_data_from_api config/config.yml
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/upload.py -c=${CONFIG_PATH} -lfp=${UPLOAD_PATH}
 
@@ -24,17 +26,18 @@ data/games.json: upload_data
 
 download_data: data/games.json
 
+
+### DATA WRANGLING & MODELLING COMMANDS
 data/games_featurized.json: download_data
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/featurize.py -i=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${FEATURIZED_DATA_PATH}
 featurize: data/games_featurized.json
 
-data/games_clustered.json:
+data/games_clustered.json: featurize
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/model.py -i=${FEATURIZED_DATA_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 model: data/games_clustered.json models/kmeans.pkl
 
 
-### WORK IN PROGRESS
-
+### DATATABLES CREATION COMMANDS
 data/boardgames.db: model
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db --engine_string=${LOCAL_DATABASE_PATH}
 
@@ -44,18 +47,16 @@ create_db_rds: model
 	docker run --env-file=${AWS_CREDENTIALS} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db
 
 
+### INGESTION COMMANDS
 ingest_data_sqlite: create_db_sqlite
 	docker run --env-file=${AWS_CREDENTIALS}  --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest
-
-
 
 
 ingest_data_rds: create_db_rds
 	docker run --env-file=${AWS_CREDENTIALS} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest
 
 
-
-
+### HELPER COMMANDS
 truncate_ingest_data:
 	docker run --env-file=${AWS_CREDENTIALS} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest -t
 
@@ -63,8 +64,13 @@ clean:
 	rm data/external/games.json
 	rm data/games.json
 	rm data/boardgames.db
+	rm data/games_clustered.json
+	rm data/games_featurized.json
+	rm models/kmeans.pkl
+	rm models/kmeans.txt
 
 
+### RAW DATA COMMANDS
 data/game_ids.txt:
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/fetch_game_ids.py -c=${CONFIG_PATH}
 

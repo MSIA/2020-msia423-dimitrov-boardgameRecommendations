@@ -1,14 +1,14 @@
 import os
 
-# DEBUG = True
-# LOGGING_CONFIG = "config/logging/local.conf"
-# PORT = 5000
-# APP_NAME = "boardgameRecommendations"
+DEBUG = False
+LOGGING_CONFIG = "config/logging/local.conf"
+PORT = 5000
+APP_NAME = "Boardgame_Recommendations_App"
 # SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'
-# SQLALCHEMY_TRACK_MODIFICATIONS = True
-# HOST = "0.0.0.0"
-# SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-# MAX_ROWS_SHOW = 100
+SQLALCHEMY_TRACK_MODIFICATIONS = False
+HOST = "0.0.0.0"
+SQLALCHEMY_ECHO = True  # If true, SQL for queries made will be printed
+MAX_ROWS_SHOW = 10
 
 # Connection string
 DB_HOST = os.environ.get('MYSQL_HOST')

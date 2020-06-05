@@ -7,35 +7,37 @@
 
 <body>
     <h3>
-         <a href = "{{ url_for('index') }}">Penny Lane Music Recommender</a>
+         <a href = "{{ url_for('index') }}">Boardgame Clustering & Recommendations</a>
     </h3>
 
     <hr/>
     <table>
          <thead>
             <tr>
-               <th>Title</th>
-               <th>Artist</th>
-               <th>Album</th>
+                <th>Game Id</th>
+                <th>Game Name</th>
+                <th>Average User Score</th>
+                <th>Cluster Id</th>
             </tr>
          </thead>
 
          <tbody>
-            {% for track in tracks %}
+            {% for game in games %}
                <tr>
-                   <td>{{ track.title }}</td>
-                   <td>{{ track.artist }}</td>
-                   <td>{{ track.album }}</td>
+                   <td>{{ game.game_id }}</td>
+                   <td>{{ game.name }}</td>
+                   <td>{{ game.average_user_rating }}</td>
+                   <td>{{ game.cluster }}</td>
                </tr>
             {% endfor %}
          </tbody>
       </table>
-      <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
+      <form action="{{ url_for('show_cluster_or_id') }}" method=post class=show-cluster-or-id>
       <dl>
-        <input type=text size=15 name=title placeholder="Title">
-        <input type=text size=15 name=artist placeholder="Artist">
-        <input type=text size=15 name=album placeholder="Album">
-        <input type=submit value=Add>
+          <input type=text size=15 name=game_id placeholder="Game ID">
+          <input type=text size=15 name=game_name placeholder="Game Name">
+          <input type=text size=15 name=cluster_id placeholder="Cluster ID">
+          <input type=submit value=Get>
       </dl>
     </form>
 

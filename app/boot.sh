@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 
-python3 run.py create_db
-python3 run.py ingest
+source config/.mysqlconfig
 python3 app.py

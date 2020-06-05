@@ -193,7 +193,6 @@ def ingest(args):
         return None
 
     logger.info(f"Persisting {len(games)} games to database")
-    logger.info(f"This will take approximately 15 minutes. Thank you for your patience.")
     successfully_added = 0
     not_added = 0
     for game in games:
