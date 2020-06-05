@@ -75,7 +75,7 @@ def show_cluster_or_id():
             traceback.print_exc()
             logger.warning("Not able to display boardgames, error page returned")
             return render_template('error.html')
-
+    # Finally, if game_cluster is provided, then return top 10 games in that cluster
     else:
         try:
             games = db.session.query(Boardgame).filter(Boardgame.cluster == request.form['cluster_id']).order_by(Boardgame.average_user_rating.desc()).limit(app.config["MAX_ROWS_SHOW"]).all()
@@ -86,12 +86,7 @@ def show_cluster_or_id():
             logger.warning("Not able to display boardgames, error page returned")
             return render_template('error.html')
 
-    try:
-        track1 = Boardgame(artist=request.form['artist'], album=request.form['album'], title=request.form['title'])
-        logger.info("New song added: %s by %s", request.form['title'], request.form['artist'])
-        return redirect(url_for('index'))
-    except:
-        pass
+
 
 
 if __name__ == '__main__':

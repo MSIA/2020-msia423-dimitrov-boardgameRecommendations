@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link href="static/basic.css" rel="stylesheet">
+    <link href="/app/static/basic.css" rel="stylesheet">
 </head>
 
 <body>
-    <h3>
-         <a href = "{{ url_for('index') }}">Boardgame Clustering & Recommendations</a>
-    </h3>
+    <h2>
+        <div>
+            <img src="https://raw.githubusercontent.com/MSIA/2020-msia423-dimitrov-boardgameRecommendations/development/app/static/logo.png?token=AMXEJMFS3C3PDSFNOS5YVC264MCYM" alt="BoardGameGuru" height=80>
+            <a href = "{{ url_for('index') }}">BoardGameGuru: A Boardgame Recommendation System</a>
+        </div>
+    </h2>
 
     <hr/>
     <table>
@@ -18,6 +21,13 @@
                 <th>Game Name</th>
                 <th>Average User Score</th>
                 <th>Cluster Id</th>
+                <th>Thumbnail</th>
+                <th>Avg. Complexity</th>
+                <th># users own</th>
+                <th>Year Published</th>
+                <th>Min. Age</th>
+                <th>BoardGameGeek.com Link</th>
+                <th>Description</th>
             </tr>
          </thead>
 
@@ -28,6 +38,15 @@
                    <td>{{ game.name }}</td>
                    <td>{{ game.average_user_rating }}</td>
                    <td>{{ game.cluster }}</td>
+                   <td><img alt={{ game.name }} src={{ game.thumbnail }} height=50></td>
+                   <td>{{ game.average_user_rating_weight }}/5</td>
+                   <td>{{ game.number_of_users_own }}</td>
+                   <td>{{ game.year_published}}</td>
+                   <td>{{ game.min_age}}</td>
+                   <td><a href="https://boardgamegeek.com/boardgame/{{ game.game_id }}">link</a></td>
+                   <td><textarea rows = "3" cols = "40" maxlength = "100" name = "description">
+                            {{ game.description }}
+                        </textarea></td>
                </tr>
             {% endfor %}
          </tbody>
