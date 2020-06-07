@@ -30,7 +30,7 @@ except:
     logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-logger = logging.getLogger('featurize.py')
+logger = logging.getLogger(__file__)
 
 
 def load_unfeaturized_data(filepath):

@@ -10,6 +10,7 @@ import logging
 import logging.config
 import yaml
 import time
+import sys
 
 # todo: Exception Handling
 
@@ -20,7 +21,7 @@ except:
     logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-logger = logging.getLogger('download.py')
+logger = logging.getLogger(__file__)
 
 def download_file_from_bucket(bucket_name, key, local_filepath,):
     '''Download file from S3 bucket with specified key & filepath
@@ -59,10 +60,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load .yml config file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
-
-    logger.info(f'Configuration file loaded from {args.config}')
+    try:
+        with open(args.config, 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+            logger.info(f'Loaded configurations from {args.config}')
+    except FileNotFoundError as e:
+        logger.error(f"Could not load configurations file, didn't find it at {args.config} and threw error {e}")
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     # Download file to S3 bucket
     try:

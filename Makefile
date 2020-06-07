@@ -23,11 +23,20 @@ upload_data: raw_data_from_api config/config.yml
 
 data/games.json: upload_data
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/download.py -c=${CONFIG_PATH} -lfp=${DOWNLOAD_PATH}
-
 download_data: data/games.json
 
+############################################################
+###### UNDER CONSTRUCTION FOR SINGLE DOCKER RUN COMMAN #######
+### ________________________________________________________
+pipeline:
+	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env run.py -lfp=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 
-### DATA WRANGLING & MODELLING COMMANDS
+
+### ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+###### UNDER CONSTRUCTION FOR SINGLE DOCKER RUN COMMAN #######
+############################################################
+
+### FEATURE GENERATION & MODELLING COMMANDS
 data/games_featurized.json: download_data
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/featurize.py -i=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${FEATURIZED_DATA_PATH}
 featurize: data/games_featurized.json
@@ -35,7 +44,6 @@ featurize: data/games_featurized.json
 data/games_clustered.json: featurize
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/model.py -i=${FEATURIZED_DATA_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 model: data/games_clustered.json models/kmeans.pkl
-
 
 ### DATATABLES CREATION COMMANDS
 data/boardgames.db: model

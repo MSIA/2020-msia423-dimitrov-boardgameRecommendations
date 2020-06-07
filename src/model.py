@@ -18,7 +18,7 @@ except:
     logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-logger = logging.getLogger('model.py')
+logger = logging.getLogger(__file__)
 
 
 def load_featurized_data(filepath):
@@ -53,7 +53,7 @@ def fit_kmeans(X, k, seed):
     # Instantiate estimator
     kmeans = KMeans(n_clusters=k, random_state=seed)
     # Fit estimator on standardized feature data
-    logger.info('Fitting KMeans Clustering algorithm to provided feature data')
+    logger.info('Fitting KMeans Clustering algorithm to provided feature data. This will take ~2 minutes')
     kmeans.fit(X)
 
     return kmeans
@@ -140,6 +140,7 @@ if __name__ == "__main__":
     with open(args.model_output, 'wb') as output:
         pickle.dump(model, output)
         logger.info(f'Saved model to {args.model_output}')
+        logger.info('It might take ~30 seconds for the file to appear in your file system')
 
     # Saving silhouette score
     model_silhouette_path = args.model_output[:-4] + '.txt'  # Changing the file extension from .pkl to .txt
