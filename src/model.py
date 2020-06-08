@@ -23,11 +23,15 @@ logger = logging.getLogger(__file__)
 
 def load_featurized_data(filepath):
     """Loads json data from local filepath and returns a dictionary """
-
-    with open(filepath) as json_file:
-        data = json.load(json_file)
-        df = pd.DataFrame(data)
-        logger.info(f'Successfully loaded unfeaturized data from {filepath}')
+    try:
+        with open(filepath) as json_file:
+            data = json.load(json_file)
+            df = pd.DataFrame(data)
+            logger.info(f'Successfully loaded unfeaturized data from {filepath}')
+    except FileNotFoundError as e:
+        logger.error(f'Did not find file at {filepath} and got error {e}')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     return df
 
@@ -35,28 +39,47 @@ def extract_features(df):
     '''Drops all columns, which are not relevant features for KMeans Clustering'''
 
     logger.debug('Dropping columns which are not relevant features for KMeans Clustering')
-    features_df = df.drop(['id', 'name', 'image', 'thumbnail', 'artists', 'publishers',
+    try:
+        features_df = df.drop(['id', 'name', 'image', 'thumbnail', 'artists', 'publishers',
                            'designers', 'description', 'categories', 'mechanics'], axis=1)
+        return features_df
+    except KeyError as e:
+        logger.error(f'Did not find all the columns that are supposed to be drop and got error {e}. Check the schema?')
+        logger.error('Returning original dataframe')
+        return df
 
-    return features_df
 
 def standardize_features(df):
     '''Standardize Feature Matrix. Takes pd.DataFrame and returns Numpy array'''
     logger.info('Standardizing Features')
-    standardized_features = StandardScaler().fit_transform(df)
+    try:
+        standardized_features = StandardScaler().fit_transform(df)
+        return standardized_features
+    except ValueError as e:
+        logger.error(f'Encountered error: {e}. Maybe your dataframe is empty?')
+        logger.error('Returning original dataframe')
+        return df
 
-    return standardized_features
 
 def fit_kmeans(X, k, seed):
     '''Fits KMeans clustering algorithm on provided feature matrix. Returns model object'''
 
-    # Instantiate estimator
-    kmeans = KMeans(n_clusters=k, random_state=seed)
-    # Fit estimator on standardized feature data
-    logger.info('Fitting KMeans Clustering algorithm to provided feature data. This will take ~2 minutes')
-    kmeans.fit(X)
+    try:
+        # Instantiate estimator
+        kmeans = KMeans(n_clusters=k, random_state=seed)
+        # Fit estimator on standardized feature data
+        logger.info('Fitting KMeans Clustering algorithm to provided feature data. This will take ~2 minutes')
+        kmeans.fit(X)
+        return kmeans
+    except ValueError as e:
+        logger.error(f'Encountered error: {e}. Maybe you specified a seed, which is not a whole number?')
+        logger.error('Terminating process prematurely')
+        sys.exit()
+    except TypeError as e:
+        logger.error(f'Encountered error: {e}. Maybe you specified a value for n_clusters, which is not a whole number?')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
-    return kmeans
 
 def model_predict(X, model):
     '''Calculates labels for feature data based on provided model'''
