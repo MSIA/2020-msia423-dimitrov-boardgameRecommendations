@@ -1,6 +1,7 @@
-<img src="app/static/logo.png" alt="BoardGameGuru logo" height="70"/>
+<img src="app/static/logo.png" alt="BoardGameGuru logo" height="120"/>
 
-# BoardGameGuru - "The Guru to your Geek" - A Boardgame Recommendation Engine
+# BoardGameGuru - "The Guru to your Geek" 
+# A Boardgame Recommendation Engine
 ## MSiA423 - Analytics Value Chain - 
 ### Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
 
@@ -54,10 +55,9 @@ BoardGameGuru utilizes two data sources, both of which originate from BoardGameG
   - Click-Through-Rate to boardgamegeek.com and/or YouTube reviews (Users will be presented with links to learn more about the recommended game)
   - Avg. Time on Site and/or Avg. Number of Recommendations Requested (measured via Google Analytics)
 - Statistical
-  - Average RMSE of user ratings via cross-validation
-  - Rank based metrics capturing relative preference: mRR, mAP, nDCG
   - % of variation explained (for Principal Components Analysis)
   - Clustering SSE (if the current categorization of games is not adequate)
+  - Silhouette Score
 
 ## Project Backlog
 <img src="figures/backlogStructure.png" alt="backlogStructure" width="170" height="110"/>
@@ -198,7 +198,7 @@ Expected result:
 - 15,739 game records are ingested to it.
 
 #### 3.2 Using RDS
-Before creating a table in RDS and ingesting teh data you need to:
+Before creating a table in RDS and ingesting the data you need to:
 - Set your AWS credentials in `config/aws_credentials.env`.
 - Configure your RDS variables in `config/.mysqlconfig`.
 - Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance.
@@ -289,7 +289,7 @@ The defauts (100 for both variables) should be sufficient.
 
 ### 4. Diagrams
 This is a graph representation of all the make commands that are available and the dependencies between them:  
-<img src="figures/diagram.png" alt="diagram.png" height="450"/>
+<img src="figures/diagram.png" alt="diagram.png" height="550"/>
 
 Note: the arrows represent dependencies. The workflow starts from the left and progresses to the right.
 
