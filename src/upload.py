@@ -38,7 +38,7 @@ def upload_file_to_bucket(bucket_name, local_filepath, key):
     # Upload to Bucket
     try:
         bucket.upload_file(local_filepath, key)
-        logger.info(f'Successfully uploaded {local_filepath}')
+        logger.info(f'Successfully uploaded {local_filepath} to S3 bucket')
     except Exception as err:
         logger.error(f'Failed to upload {local_filepath} with error: {err}')
 
@@ -62,6 +62,5 @@ if __name__ == "__main__":
     # Upload file to S3 bucket
     try:
         upload_file_to_bucket(local_filepath=args.local_filepath, **config['upload'])
-        logger.info(f'Successfully uploaded {args.local_filepath} to S3 bucket')
     except Exception as err: # Otherwise, rely on the config/config.yml file
         logger.error(f'Failed to upload {args.local_filepath} to S3 bucket with error: {err}')

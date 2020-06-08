@@ -4,11 +4,8 @@ That database can either be a local SQLite or an AWS RDS MYSQL Instance.
 
 '''
 
-import yaml
 import json
 from json import JSONDecodeError
-import numpy as np
-import pandas as pd
 import argparse
 import logging
 import logging.config
@@ -16,7 +13,7 @@ import sys
 
 from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Float
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.exc import InterfaceError, IntegrityError, ProgrammingError
+from sqlalchemy.exc import InterfaceError, IntegrityError, ProgrammingError, ArgumentError
 from sqlalchemy.ext.declarative import declarative_base
 
 from config.flaskconfig import SQLALCHEMY_DATABASE_URI
@@ -67,7 +64,18 @@ class Boardgame(Base):
 ##############################
 
 def validate(games: list) -> list:
-    """This function validates boardgames before they are ingested"""
+    """This function validates the games data to be ingested into the database
+    Checks for:
+    - Unexpected schema
+    - Invalid game_ids (have to be castable as float)
+    - Missing game names
+
+    Args:
+        games (`list`): List of games in dictionary format, which get validated
+
+    Returns:
+        validated_games (`list`): games that pass all validation checks
+    """
 
     expected_schema = {'id', 'name', 'image', 'thumbnail', 'artists', 'designers', 'year', 'description', 'categories',
                        'mechanics', 'min_age', 'publishers', 'number_of_user_weight_ratings', 'average_user_weight_rating',
@@ -139,11 +147,23 @@ def validate(games: list) -> list:
 ##############################
 
 def create_db(args):
-    """Create a DB if it doesn't exist and a table inside based on the defined SQLAlchemy ORM"""
+    """Create a DB if it doesn't exist and a table inside based on the defined SQLAlchemy ORM
+
+    Args:
+        args: command line arguments; expecting engine_string
+
+    Returns:
+        None; creates database table
+    """
 
     # Define Engine
     logger.debug(f'Creating engine from Engine String')
-    engine = create_engine(args.engine_string)
+    try:
+        engine = create_engine(args.engine_string)
+    except ArgumentError as e:
+        logger.error(f'Could not establish engine. Is the engine string empty? Got error: {e}')
+        logger.error('Terminating Process prematurely')
+        sys.exit()
     # Create Database
     Base.metadata.create_all(engine)
 
@@ -157,7 +177,12 @@ def get_session(engine_string=None):
         SQLAlchemy session
     """
     logger.debug(f'Creating engine from Engine_string')
-    engine = create_engine(engine_string)
+    try:
+        engine = create_engine(args.engine_string)
+    except ArgumentError as e:
+        logger.error(f'Could not establish engine. Is the engine string empty? Got error: {e}')
+        logger.error('Terminating Process prematurely')
+        sys.exit()
     Session = sessionmaker(bind=engine)
     session = Session()
 

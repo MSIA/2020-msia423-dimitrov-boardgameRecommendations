@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link href="/app/static/basic.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 
 <body>
@@ -12,9 +12,24 @@
             <a href = "{{ url_for('index') }}">BoardGameGuru: A Boardgame Recommendation System</a>
         </div>
     </h2>
+    <h3>
+        <div>
+            <p> How to question the Guru? </p>
+            <p> Enter a Game Name below and hit "Ask". The Guru will tell you the top 10 games in that game's cluster.</p>
+            <p> Or, enter a cluster ID and the Guru will tell you the top 10 games in that cluster.</p>
+        </div>
+    </h3>
 
+    <form action="{{ url_for('show_cluster_or_id') }}" method=post class=show-cluster-or-id>
+      <dl>
+          <input type=text size=15 name=game_id placeholder="Game ID">
+          <input type=text size=15 name=game_name placeholder="Game Name">
+          <input type=text size=15 name=cluster_id placeholder="Cluster ID">
+          <input type=submit value=Ask>
+      </dl>
+    </form>
     <hr/>
-    <table>
+    <table border="1" style="border:#1f1d1d ; text-align: center; vertical-align: center">
          <thead>
             <tr>
                 <th>Game Id</th>
@@ -51,14 +66,10 @@
             {% endfor %}
          </tbody>
       </table>
-      <form action="{{ url_for('show_cluster_or_id') }}" method=post class=show-cluster-or-id>
-      <dl>
-          <input type=text size=15 name=game_id placeholder="Game ID">
-          <input type=text size=15 name=game_name placeholder="Game Name">
-          <input type=text size=15 name=cluster_id placeholder="Cluster ID">
-          <input type=submit value=Get>
-      </dl>
-    </form>
 
+{# Bootstrap Imports for JS #}
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>

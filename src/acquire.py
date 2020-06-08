@@ -140,19 +140,19 @@ def convert_game_to_dict(game) -> dict:
         dict_game (`dict`): A dictionary with relevant information about a game
     """
     dict_game = {}
-    dict_game['id'] = game.id
-    dict_game['name'] = game.name
-    dict_game['stats'] = game.stats
+    dict_game['id'] = game.id # Unique identifier for each game on the BoardGameGeek website
+    dict_game['name'] = game.name # Game name
+    dict_game['stats'] = game.stats # Game stats like avg. user rating, avg. complexity rating, etc.
     dict_game['image'] = game.image
     dict_game['thumbnail'] = game.thumbnail
-    dict_game['artists'] = game.artists
-    dict_game['designers'] = game.designers
-    dict_game['year'] = game.year
+    dict_game['artists'] = game.artists # Develop the artwork for the game (cards, box, miniatures, etc.)
+    dict_game['designers'] = game.designers # The game designers that develop the mechanics of the game
+    dict_game['year'] = game.year # Year the game was published
     dict_game['description'] = game.description
-    dict_game['categories'] = game.categories
-    dict_game['mechanics'] = game.mechanics
-    dict_game['min_age'] = game.min_age
-    dict_game['publishers'] = game.publishers
+    dict_game['categories'] = game.categories # Categories the game falls under on the BoardGameGeek website
+    dict_game['mechanics'] = game.mechanics # Mechanics present in the game as identified on BoardGameGeek.com
+    dict_game['min_age'] = game.min_age # Minimum recommended age to play the game
+    dict_game['publishers'] = game.publishers # The companies that publish the game (might be different in different countries/continents)
 
     return dict_game
 

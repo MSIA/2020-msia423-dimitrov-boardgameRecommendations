@@ -5,6 +5,7 @@ Otherwise default: data/external/games.json
 """
 
 import boto3
+from botocore.exceptions import ClientError
 import argparse
 import logging
 import logging.config
@@ -32,6 +33,7 @@ def download_file_from_bucket(bucket_name, key, local_filepath,):
         local_filepath (`str`): The path to download the file to
     '''
     # Wait 10 seconds to make sure file is completely uploaded and available in S3 bucket
+    # This is useful in cases where the immediately preceding step is data upload to S3
     logger.info("Waiting 10 seconds to make sure file is completely uploaded and available in S3 bucket")
     time.sleep(10)
     # Connect to S3
@@ -44,8 +46,18 @@ def download_file_from_bucket(bucket_name, key, local_filepath,):
     try:
         bucket.download_file(key, local_filepath)
         logger.info(f'Successfully downloaded {key}')
-    except Exception as err:
-        logger.error(f'Failed to download {key} with error: {err}')
+    except ClientError as e:
+        logger.error(f"Failed to download {key} with error: {e}. Maybe you didn't specify the file key correctly?")
+        logger.error('Terminating process prematurely')
+        sys.exit()
+    except bucket.meta.client.exceptions.NoSuchKey:
+        logger.error(f"Failed to download {key} with error: {e}. Maybe you didn't specify the file key correctly?")
+        logger.error('Terminating process prematurely')
+        sys.exit()
+    except bucket.meta.client.exceptions.NoSuchBucket:
+        logger.error(f"Failed to download {key} with error: {e}. Maybe you didn't specify the bucket name correctly?")
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
 if __name__ == "__main__":
     # Setup CLI argument parser
@@ -70,8 +82,5 @@ if __name__ == "__main__":
         sys.exit()
 
     # Download file to S3 bucket
-    try:
-        download_file_from_bucket(local_filepath=args.local_filepath, **config['download'])
-        logger.info(f'Successfully downloaded {config["download"]["key"]} from S3 bucket')
-    except Exception as err:  # Otherwise, rely on the config/config.yml file
-        logger.error(f'Failed to download {config["download"]["key"]} from S3 bucket with error: {err}')
+    download_file_from_bucket(local_filepath=args.local_filepath, **config['download'])
+    logger.info(f'Successfully downloaded {config["download"]["key"]} from S3 bucket')

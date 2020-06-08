@@ -6,6 +6,7 @@ API Documentation: https://boardgamegeek.com/wiki/page/BGG_XML_API2
 
 import pandas as pd
 import logging
+import sys
 import logging.config
 import argparse
 import requests
@@ -25,10 +26,14 @@ logger = logging.getLogger(__file__)
 def load_txt(filepath):
     """Loads a .txt file and returns contents as a list of integers"""
 
-    with open(filepath, 'r') as f:
-        game_ids = [int(line.rstrip('\n')) for line in f]
-
-    return game_ids
+    try:
+        with open(filepath, 'r') as f:
+            game_ids = [int(line.rstrip('\n')) for line in f]
+            return game_ids
+    except FileNotFoundError as e:
+        logger.error(f"Invalid path or didn't find game_ids at specified path; Got error: {e}")
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
 def call_xml_api(game_id):
     """

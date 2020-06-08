@@ -1,8 +1,8 @@
 <img src="app/static/logo.png" alt="BoardGameGuru logo" height="120"/>
 
-# BoardGameGuru - "The Guru to your Geek" 
+# BoardGameGuru: "The Guru to your Geek" 
 # A Boardgame Recommendation Engine
-## MSiA423 - Analytics Value Chain - 
+## MSiA423 - Analytics Value Chain 
 ### Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
 
 <!-- toc -->

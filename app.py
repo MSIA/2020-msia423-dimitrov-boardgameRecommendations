@@ -6,7 +6,7 @@ from ingest import Boardgame
 from flask_sqlalchemy import SQLAlchemy
 
 # Initialize the Flask application
-app = Flask('Boardgame_Recommendations_App', template_folder="app/templates")
+app = Flask('Boardgame_Recommendations_App', static_folder='app/static' ,template_folder="app/templates")
 
 # Configure flask app from flask_config.py
 app.config.from_pyfile('config/flaskconfig.py')

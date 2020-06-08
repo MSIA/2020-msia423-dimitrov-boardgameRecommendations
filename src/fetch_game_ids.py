@@ -5,6 +5,7 @@ Link: https://github.com/beefsack/bgg-ranking-historicals/blob/master/2019-07-08
 
 import pandas as pd
 import yaml
+import sys
 import logging
 import logging.config
 import argparse
@@ -30,8 +31,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load .yml config file
-    with open(args.config, 'r') as f:
-        config = yaml.load(f, Loader=yaml.FullLoader)
+    try:
+        with open(args.config, 'r') as f:
+            config = yaml.load(f, Loader=yaml.FullLoader)
+            logger.info(f'Loaded configurations from {args.config}')
+    except FileNotFoundError as e:
+        logger.error(f"Could not load configurations file, didn't find it at {args.config} and threw error {e}")
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     # Define GitHub url based on config/config.yml
     url = config['acquire']['fetch_game_ids']['url']
