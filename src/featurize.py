@@ -35,10 +35,14 @@ logger = logging.getLogger(__file__)
 
 def load_unfeaturized_data(filepath):
     """Loads json data from local filepath and returns a dictionary """
-
-    with open(filepath) as json_file:
-        data = json.load(json_file)
-        logger.info(f'Successfully loaded unfeaturized data from {filepath}')
+    try:
+        with open(filepath) as json_file:
+            data = json.load(json_file)
+            logger.info(f'Successfully loaded unfeaturized data from {filepath}')
+    except FileNotFoundError as e:
+        logger.error(f'Did not find file at {filepath} and got error {e}')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     return data
 
@@ -46,65 +50,86 @@ def load_unfeaturized_data(filepath):
 # STEP 1 - expand the columns for a given feature
 # Based on this SO post: # https://stackoverflow.com/questions/27263805/pandas-column-of-lists-create-a-row-for-each-list-element
 def expand_feature(df, feature_name):
-    '''
+    """
 
     Args:
         df (`pd.DataFrame`):
-        feature_name (`str`): feature name to featurize (expect 'categories' or 'mechanics'
+        feature_name (`str`): feature name to featurize (expect 'categories' or 'mechanics')
 
     Returns:
         df
-    '''
+    """
     logger.debug(f'Expanding Features for {feature_name}')
-    df_expanded_feature = pd.DataFrame({
-        col: np.repeat(df[col].values, df[feature_name].str.len())
-        for col in df.columns.drop(feature_name)}
-    ).assign(**{feature_name: np.concatenate(df[feature_name].values)})[df.columns]
+    try:
+        df_expanded_feature = pd.DataFrame({
+            col: np.repeat(df[col].values, df[feature_name].str.len())
+            for col in df.columns.drop(feature_name)}
+        ).assign(**{feature_name: np.concatenate(df[feature_name].values)})[df.columns]
+    except KeyError as e:
+        logger.error(f'Did not find column "{feature_name}" in provided DataFrame and got error {e}')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     return df_expanded_feature
 
 # STEP 2 - get_dummies
 # # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.get_dummies.html
 def one_hot_encode(df, feature_name):
-    '''One-hot encoded selected feature in given dataframe'''
+    """One-hot encoded selected feature in given dataframe"""
 
     logger.debug(f'One hot encoding for {feature_name}')
-    df_one_hot_encoded = pd.get_dummies(df, columns=[feature_name])
+    if 'id' not in df.columns:
+        logger.warning('The dataframe does not contain the "Id" column.')
+        logger.warning('It might not be possible to join the one-hot encoded data back with the original dataset')
+    try:
+        df_one_hot_encoded = pd.get_dummies(df, columns=[feature_name])
+    except (ValueError, KeyError) as e:
+        logger.error(f'Could not one-hot encode the data and got error {e}. Maybe the dataframe is empty?')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
     return df_one_hot_encoded
 
 
 # STEP 3
 def collapse_one_hot_encoded(df, index):
-    ''' Takes only the columns with the one-hot encoded data and
+    """ Takes only the columns with the one-hot encoded data and
     collapses all the one hot encoded rows for a single game onto a single row
 
     Uses the index at which the one hot encoded columns start to separate out only those rows
-    '''
+    """
     # Taking only the columns for the given feature and the id column so we can join back later
     logger.debug('Collapsing one hot encoded columns')
+
     id_and_feature_columns = ['id'] + list(df.columns[index:])
 
     # Collapsing the feature columns so all binary feature values are on the same row
-    df_one_hot_collapsed = df[id_and_feature_columns].groupby(by='id', as_index=False).sum()
-
-    return df_one_hot_collapsed
+    try:
+        df_one_hot_collapsed = df[id_and_feature_columns].groupby(by='id', as_index=False).sum()
+        return df_one_hot_collapsed
+    except KeyError as e:
+        logger.error(f'Cannot collapse one_hot_encoded columns. Is the "id" column in the dataframe?')
+        logger.error('Terminating process prematurely')
+        return df
 
 
 # STEP 4
 def merge_original_with_collapsed(df, collapsed):
-    '''Merge 2 dataframes based on id column'''
+    """Merge 2 dataframes based on id column"""
 
     logger.debug('Merging with original dataframe')
-    df_with_feature = df.merge(collapsed, how='inner', on='id')
-
-    return df_with_feature
+    try:
+        df_with_feature = df.merge(collapsed, how='inner', on='id')
+        return df_with_feature
+    except KeyError as e:
+        logger.error(f'Could not merge the two dataframes and got error {e}. Maybe the "id" column is missing from one of them> it is the key that is being used to join')
+        logger.error('Terminating process prematurely')
+        sys.exit()
 
 
 # WRAPPER FUNCTION
 def wrapper(df, feature_name, index):
-    '''
-
+    """
     Args:
         df (`pd.DataFrame`):
         feature_name (`str`): The feature to one-hot encode in a many-to-many context
@@ -112,7 +137,7 @@ def wrapper(df, feature_name, index):
 
     Returns:
         df_with_feature (`pd.DataFrame`): The original dataframe with one-hot encoded columns for all the values in the feature_name column
-    '''
+    """
     logger.info(f'Executing wrapper function for {feature_name}')
     # Step 1
     df_expanded_feature = expand_feature(df, feature_name)
@@ -132,12 +157,18 @@ def extract_stats(df):
     This function extracts the relevant information from those dictionaries and drops the stats column
     """
     logger.debug('Extracting stats into new columns from the "stats" column, which contains dictionaries columns')
-    df['number_of_user_ratings'] = df.apply(lambda row: row['stats']['usersrated'], axis=1)
-    df['average_user_rating'] = df.apply(lambda row: row['stats']['average'], axis=1)
-    df['number_of_user_weight_ratings'] = df.apply(lambda row: row['stats']['numweights'], axis=1)
-    df['average_user_weight_rating'] = df.apply(lambda row: row['stats']['averageweight'], axis=1)
-    df['bayes_average'] = df.apply(lambda row: row['stats']['bayesaverage'], axis=1)
-    df['number_of_users_own'] = df.apply(lambda row: row['stats']['owned'], axis=1)
+    try:
+        df['number_of_user_ratings'] = df.apply(lambda row: row['stats']['usersrated'], axis=1)
+        df['average_user_rating'] = df.apply(lambda row: row['stats']['average'], axis=1)
+        df['number_of_user_weight_ratings'] = df.apply(lambda row: row['stats']['numweights'], axis=1)
+        df['average_user_weight_rating'] = df.apply(lambda row: row['stats']['averageweight'], axis=1)
+        df['bayes_average'] = df.apply(lambda row: row['stats']['bayesaverage'], axis=1)
+        df['number_of_users_own'] = df.apply(lambda row: row['stats']['owned'], axis=1)
+    except KeyError as e:
+        logger.error(f'Could not extract relevant stats from "stats" column and got error: {e}')
+        logger.error('Is the "stats" column in the dataframe?')
+        logger.error('Returning original dataframe')
+        return df
 
     logger.debug('Dropping stats column with dictionaries')
     df = df.drop('stats', axis=1)

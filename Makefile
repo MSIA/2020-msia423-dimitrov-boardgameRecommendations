@@ -8,7 +8,7 @@ MODEL_OUTPUT_PATH=models/kmeans.pkl
 
 AWS_CREDENTIALS=config/aws_credentials.env
 
-.PHONY: app truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite model featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
+.PHONY: tests app truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite model featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
 
 ### RAW JSON DATA FETCH
 data/external/games.json: config/config.yml
@@ -60,6 +60,10 @@ ingest_data_rds: create_db_rds
 app:
 	docker run -it -e SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} -p 5000:5000 --name test web_app
 
+### UNIT TESTS
+tests:
+	docker run --mount type=bind,source="`pwd`",target=/app/ python_env -m pytest
+
 
 ### HELPER COMMANDS
 truncate_ingest_data:
@@ -73,7 +77,6 @@ clean:
 	rm data/games_featurized.json
 	rm models/kmeans.pkl
 	rm models/kmeans.txt
-
 
 ### RAW DATA COMMANDS
 data/game_ids.txt:
