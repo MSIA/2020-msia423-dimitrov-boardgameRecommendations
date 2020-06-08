@@ -7,9 +7,8 @@ CLUSTERED_DATA_PATH=data/games_clustered.json
 MODEL_OUTPUT_PATH=models/kmeans.pkl
 
 AWS_CREDENTIALS=config/aws_credentials.env
-LOCAL_DATABASE_PATH="sqlite:///data/boardgames.db"
 
-.PHONY: truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite model featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
+.PHONY: app truncate_ingest_data ingest_data_rds ingest_data_sqlite create_db_rds create_db_sqlite model featurize download_data upload_data upload_raw_data raw_xml raw_data_from_api game_ids clean clean_raw_data
 
 ### RAW JSON DATA FETCH
 data/external/games.json: config/config.yml
@@ -17,7 +16,7 @@ data/external/games.json: config/config.yml
 
 raw_data_from_api: data/external/games.json config/config.yml
 
-### S3 RELATED COMMANDS
+### S3
 upload_data: raw_data_from_api config/config.yml
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/upload.py -c=${CONFIG_PATH} -lfp=${UPLOAD_PATH}
 
@@ -25,18 +24,12 @@ data/games.json: upload_data
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env src/download.py -c=${CONFIG_PATH} -lfp=${DOWNLOAD_PATH}
 download_data: data/games.json
 
-############################################################
-###### UNDER CONSTRUCTION FOR SINGLE DOCKER RUN COMMAN #######
-### ________________________________________________________
+### SINGLE DOCKER RUN COMMAND FOR DOWNLOAD, FEATURIZE, and TRAIN MODEL #######
 pipeline:
 	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env run.py -lfp=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 
 
-### ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-###### UNDER CONSTRUCTION FOR SINGLE DOCKER RUN COMMAN #######
-############################################################
-
-### FEATURE GENERATION & MODELLING COMMANDS
+### FEATURE GENERATION & MODELLING
 data/games_featurized.json: download_data
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/featurize.py -i=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${FEATURIZED_DATA_PATH}
 featurize: data/games_featurized.json
@@ -45,23 +38,27 @@ data/games_clustered.json: featurize
 	docker run --mount type=bind,source="`pwd`",target=/app/ python_env src/model.py -i=${FEATURIZED_DATA_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 model: data/games_clustered.json models/kmeans.pkl
 
-### DATATABLES CREATION COMMANDS
-data/boardgames.db: model
-	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db --engine_string=${LOCAL_DATABASE_PATH}
+### DATATABLES CREATION
+data/boardgames.db:
+	docker run -e SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db
 
 create_db_sqlite: data/boardgames.db
 
-create_db_rds: model
+create_db_rds:
 	docker run --env-file=${AWS_CREDENTIALS} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py create_db
 
 
-### INGESTION COMMANDS
+### INGESTION
 ingest_data_sqlite: create_db_sqlite
-	docker run --env-file=${AWS_CREDENTIALS}  --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest
+	docker run  -e SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest
 
 
 ingest_data_rds: create_db_rds
 	docker run --env-file=${AWS_CREDENTIALS} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ python_env ingest.py ingest
+
+### FLASK APP
+app:
+	docker run -it -e SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} -p 5000:5000 --name test web_app
 
 
 ### HELPER COMMANDS

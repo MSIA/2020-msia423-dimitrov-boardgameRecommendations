@@ -9,7 +9,6 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask('Boardgame_Recommendations_App', template_folder="app/templates")
 
 # Configure flask app from flask_config.py
-print('Executing Flask Configurations')
 app.config.from_pyfile('config/flaskconfig.py')
 
 # Define LOGGING_CONFIG in flask_config.py - path to config file for setting

@@ -1,9 +1,12 @@
-# MSiA423 - Analytics Value Chain - Boardgame Recommendations
-## Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
+<img src="app/static/logo.png" alt="BoardGameGuru logo" height="70"/>
+
+# BoardGameGuru - "The Guru to your Geek" - A Boardgame Recommendation Engine
+## MSiA423 - Analytics Value Chain - 
+### Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
 
 <!-- toc -->
 
-- [JUMP TO RECREATING THE APP](#running-the-app)
+- [JUMP TO RECREATING THE APP](#quickest-way-to-recreate-app)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
@@ -12,15 +15,18 @@
 - [Project Backlog](#project-backlog)
 - [Project Icebox](#project-icebox)
 - [Directory Structure](#directory-structure)
-- [Running the app in Docker](#running-the-app-in-docker)
-  * [0. Make sure you're on the Northwestern VPN](#0-connect-to-northwestern-vpn)
-  * [1. Build the image](#1-build-the-image)
-  * [2. SQLite](#2-acquire--ingest-data-locally-sqlite)
-  * [3. RDS MySQL](#3-acquire--ingest-data-to-rds)
-  * [4. Raw API Data](#4-raw-api-data)
-  * [5. Querying my RDS Instance](#5-querying-my-rds-instance)
-  * [6. Configurations](#4-other-configurations)
-  * [7. References](#5-references)
+- [Quickest Way to Recreate the App](#quickest-way-to-recreate-app)
+  * [1. Acquire data from API and upload to S3 bucket](#1-acquire-data-from-api-and-upload-to-s3-bucket)
+  * [2. Download data from S3, generate features, and train clustering algorithm](#2-download-data-from-s3-generate-features-and-train-clustering-algorithm)
+  * [3.1 SQLite](#31-using-sqlite)
+  * [3.2 RDS MySQL](#32-using-rds)
+  * [4. Run the Flask App](#4-run-the-flask-app)
+- [Additional Functionality](#additional-functionality)
+  * [1. Raw XML Data from API](#1-raw-xml-data-api)
+  * [2. Querying my RDS Instance](#2-querying-my-rds-instance)
+  * [3. Other Make Commands for a step-by-step workflow & Configurations](#3-other-make-commands-for-a-step-by-step-workflow--configurations)
+  * [4. Diagrams](#4-diagrams)
+  * [5. References](#5-references)
 
 <!-- tocstop -->
 
@@ -29,18 +35,19 @@
 More people playing boardgames they love.
 
 ### Problem Statement
-The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec). In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_. With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world.
+The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec).  
+In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_.   
+With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world.
 
 ### Mission
-Provide a personalized boardgame recommendation system, which helps people discover games they will enjoy.
+Provide a boardgame recommendation system, which helps people discover games they will enjoy.
 
-The key characteristic here is _personalized_. Currently, there are boardgame conferences, YouTube channels that review boardgames, boardgame stores, and ranking websites such as BoardGameGeek.com (“The IMDB of boardgames”). These help address the problem, but are either expensive or their opinions are subjective.
+Currently, there are boardgame conferences, YouTube channels that review boardgames, boardgame stores, and ranking websites such as BoardGameGeek.com (“The IMDB of boardgames”).  
+These help address the problem, but are either expensive, their opinions are subjective, or don't provide information in a structured way.
 
-There are two relevant data sources, both of which originate from BoardGameGeek.com.
-Several Kaggle datasets containing ratings, reviews, and other game information:
-- [Dataset 1](https://www.kaggle.com/gabrio/board-games-dataset), [Dataset 2](https://www.kaggle.com/jvanelteren/boardgamegeek-reviews), [Dataset 3](https://www.kaggle.com/mrpantherson/board-game-data), [Dataset 4](https://www.kaggle.com/extralime/20000-boardgames-dataset)
+BoardGameGuru utilizes two data sources, both of which originate from BoardGameGeek.com:
 - [Boardgamegeek XML API](https://boardgamegeek.com/wiki/page/BGG_XML_API#); [Boardgamegeek XML API 2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
-
+- [Game ids for 17,313 games from beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
 ### Success Criteria
 - Business:
   - % positive user ratings of recommendations ("Did you like this recommendation?")
@@ -92,6 +99,9 @@ __Make recommendations/predictions for boardgames the user will like.__
 ## Project Icebox
 
 Visualize boardgame segmentation
+- Add links to YouTube reviews for each game
+- Allow users to rate the provided recommendations i.e. implement a feedback loop
+- Implement Google Analytics on the website
 - Build a D3 Visualization for the clustering segmentation
 - Enable export of cluster segmentation
 
@@ -141,62 +151,55 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ├── run.py                            <- Simplifies the execution of one or more of the src scripts  
 ├── requirements.txt                  <- Python package dependencies
 ```
+## Quickest way to recreate App
 
-## Running the app
-There are 3 workflows implemented via a Makefile:
-- Acquire & Ingest data locally (SQLite)
-- Acquire & Ingest data to RDS
-- Raw API data  
-Here is a graph representation of these workflows:  
-<img src="figures/diagram.png" alt="diagram.png" height="250"/>
-
-Note: the arrows represent dependencies. The workflow starts from the left and progresses to the right.
-
-### 0. Connect to Northwestern VPN and make sure Docker is running.
-
-### 1. Build Docker Image
-In the root directory of the project
+First, make sure you are connected to Northwestern VPN and Docker is running.  
+Then, build the docker image by executing the following command in the root directory of the project
 ```bash
 docker build -t python_env .
 ```
-### 2. Acquire & Ingest data locally (SQLite)
 
-As an example, the original data files are included in the repo.
-To start fresh and get up-to-date data:
+### 1. Acquire data from API and upload to S3 bucket
+I've already done this, so if I've given you access to my S3 bucket, you can skip to the next step!
 ```bash
-make clean
+make upload_data
 ```
-This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
+Note: The S3 bucket to upload to is configurable in `config/config.yml`
+### 2. Download data from S3, generate features, and train clustering algorithm
+- First, set your AWS credentials in `config/aws_credentials.env`. Then do:
+```bash
+make pipeline
+```
+Expected result:
+- Data is downloaded from S3 bucket to `data/games.json`.   
+Location is configurable by specifying `DOWNLOAD_PATH=<local filepath>` after `make pipeline`.
+- Data is featurized and a KMeans clustering algorithm is trained on the featurized data.  
+Model is saved to `models/kmeans.pkl`. The location is configurable by specifying `MODEL_OUTPUT_PATH=<local filepath>` after `make pipeline`.
+- Model is evaluated based on Silhouette score and value is saved to `model/kmeans.txt` or next to the .pkl file if you specified `MODEL_OUTPUT_PATH`.  
+Note: Model hyperparameters (K & random seed) can be configured in `config/config.yml`. I don't recommend changing K, because testing has shown 250 to be optimal.  
+- Final dataset with cluster ids saved to `data/games_clustered.json`.  
+Location is configurable by specifying `CLUSTERED_DATA_PATH=<local filepath>` after `make pipeline`.
 
-Then, to run the entire pipeline and produce a local SQLite database:
-
-- Set your AWS credentials in `config/aws_credentials.env`.
-- Specify the S3 bucket to upload to in `config/config.yml`.
-- Specify the S3 bucket to download from in `config/config.yml`. In most cases, this should be the same as the upload bucket.
-- Finally:
+### 3. Ingest the data to a local SQLite database OR RDS database
+#### 3.1 Using SQLite
+By default, the local SQLite database will be created in data/boardgames.db.  
+If you want to create the db in an alternative location, first do:
+```bash
+export SQLALCHEMY_DATABASE_URI=sqlite:///<your alternative location>
+```
+If the defaults are ok for you, then just directly do:
 
 ```bash
 make ingest_data_sqlite
 ```
-Expected Time to Completion: ~10 minutes.
 
-Expected result: data/boardgames.db should be created.
-What's happening?
-- Data Retrieved via API and saved to `data/external/games.json`.
-- Data is uploaded to S3 bucket as `games.json`.
-- Data is downloaded from S3 bucket to `data/games.json`.
-- SQLite database is created with table called: `boardgames`.
-- Data is ingested into the SQLite database.
+Expected result:
+- `data/boardgames.db` is created.
+- 15,739 game records are ingested to it.
 
-### 3. Acquire & Ingest data to RDS
-
-To run the entire pipeline and produce a populated RDS database:
-- If you've ran the previous step and want to test from scratch do:
-```bash
-make clean
-```
-This will delete `data/external/games.json`, `data/games.json`, and `data/boardgames.db`.
-
+#### 3.2 Using RDS
+Before creating a table in RDS and ingesting teh data you need to:
+- Set your AWS credentials in `config/aws_credentials.env`.
 - Configure your RDS variables in `config/.mysqlconfig`.
 - Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance.
 - If it doesn't, create it: mysql> `CREATE DATABASE <MYSQL_DATABASE>`
@@ -204,25 +207,35 @@ This will delete `data/external/games.json`, `data/games.json`, and `data/boardg
 ```bash
 source config/.mysqlconfig
 ```
-- Make sure you've entered your AWS credentials in `config/aws_credentials.env`.
-- Make sure you've specified your S3 bucket for upload/download in `config/config.yml`
-- Finally:
+and finally:
 ```bash
 make ingest_data_rds
 ```
-Expected Time to Completion: ~15 minutes, but varies b/w 10 and 20.
+### 4. Run the Flask App
+First, build the Docker image. From the root of the project repository do:
 
-Expected Result: `mysql> SELECT * FROM boardgames;` should return all data (~17,311 rows)
-What's happening?
-- Data Retrieved via API and saved to `data/external/games.json`.
-- Data is uploaded to S3 bucket as `games.json`.
-- Data is downloaded from S3 bucket to `data/games.json`.
-- MySQL database is created on your RDS instance with a table called: `boardgames`.
-- Data is ingested into the SQLite database.
+```bash
+docker build -f app/Dockerfile -t web_app .
+```
+Make sure you've set your credentials in `source config/.mysqlconfig`.
+Or, you can directly `export SQLALCHEMY_DATABASE_URI=<your url of choice>`, but beware of typos!  
+Then do:
+```bash
+make app
+```
+Expected behavior: the app should be running on [http://0.0.0.0:5000/ ]( http://0.0.0.0:5000/ )
 
-### 4. Raw API data
+When you're done with the app:
+```bash
+docker kill test
+docker rm /test
+```
+## Additional Functionality
 
-The raw data from the API is included in the repo. More specifically:
+### 1. Raw XML data API
+Note: the regular workflow does not use the raw XML data.  
+I interact with the API via a wrapper provided by the boardgamegeek2 package.  
+The raw XML data from the API is included in the repo. More specifically:
 - `data/game_ids.txt`: Game ids for 17,313 games from [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
 - `data/raw_data.xml`: Raw XML response data as retrieved from [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
 - If you want to get up-to-date raw XML responses, first delete the current data by doing:
@@ -241,8 +254,8 @@ Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket
 make upload_raw_data
 ```
 
-### 5. Querying my RDS Instance
-If you want to get the boardgames data from my RDS instance then you will need to:
+### 2. Querying my RDS Instance
+If you want to query the boardgames data from my RDS instance then you will need to:
 - Have me tell you my RDS host
 - Have me create a user & password with SELECT privilages for my database
 - Enter these values in `config/.mysqlconfig` and do:
@@ -255,7 +268,7 @@ docker run -it --rm mysql:latest mysql -h${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL
 ```
 Expected result: You should see a `mysql>` prompt and `SHOW DATABASES` should list `msia423_first_db`.
 
-### 6. Other Configurations
+### 3. Other Make Commands for a step-by-step workflow & Configurations
 
 - The Makefile gives several shorthands for executing intermediate steps in each workflow (SQLite & RDS)
 * `make raw_data_from_api` acquires data from API to local system
@@ -273,7 +286,17 @@ Expected result: You should see a `mysql>` prompt and `SHOW DATABASES` should li
 This, however, is not recommended, because BoardGameGeek throttles excessive requests.
 The defauts (100 for both variables) should be sufficient.
 - You can change the logging level in `config/logging/local.conf`. Default: `INFO`
-### 7. References
+
+### 4. Diagrams
+This is a graph representation of all the make commands that are available and the dependencies between them:  
+<img src="figures/diagram.png" alt="diagram.png" height="450"/>
+
+Note: the arrows represent dependencies. The workflow starts from the left and progresses to the right.
+
+Below is a diagram of the architecture of the app.
+<img src="figures/App_Architecture.png" alt="App_Architecture.png"/>
+
+### 5. References
 
 - [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
 - [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
