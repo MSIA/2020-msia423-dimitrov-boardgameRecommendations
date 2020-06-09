@@ -33,7 +33,7 @@ except:
 logger = logging.getLogger(__file__)
 
 
-def load_unfeaturized_data(filepath):
+def load_unfeaturized_data(filepath: str) -> dict:
     """Loads json data from local filepath and returns a dictionary """
     try:
         with open(filepath) as json_file:
@@ -49,15 +49,16 @@ def load_unfeaturized_data(filepath):
 
 # STEP 1 - expand the columns for a given feature
 # Based on this SO post: # https://stackoverflow.com/questions/27263805/pandas-column-of-lists-create-a-row-for-each-list-element
-def expand_feature(df, feature_name):
-    """
+def expand_feature(df: pd.DataFrame, feature_name: str) -> pd.DataFrame:
+    """Expected input is a dataframe where the 'feature_name' column contains a list in each row
+    This function 'unpacks' i.e. 'expands' that feature so that each element in the list is on a separate row
 
     Args:
         df (`pd.DataFrame`):
         feature_name (`str`): feature name to featurize (expect 'categories' or 'mechanics')
 
     Returns:
-        df
+        df_expanded_feature (`pd.DataFrame`): Dataframe where each row contains 1 element and not a list in the 'feature_name' column
     """
     logger.debug(f'Expanding Features for {feature_name}')
     try:
@@ -72,10 +73,19 @@ def expand_feature(df, feature_name):
 
     return df_expanded_feature
 
+
 # STEP 2 - get_dummies
 # # https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.get_dummies.html
-def one_hot_encode(df, feature_name):
-    """One-hot encoded selected feature in given dataframe"""
+def one_hot_encode(df: pd.DataFrame, feature_name: str) -> pd.DataFrame:
+    """One-hot encodes selected feature in given dataframe
+
+    Args:
+        df (`pd.DataFrame`): The dataframe with 'feature_name' column that needs one-hot encoding
+        feature_name (`str`): The name of the column (feature) to one-hot encode
+
+    Returns:
+        df_one_hoy_encoded (`pd.DataFrame`): DataFrame with 'feature_name' column one hot encoded
+    """
 
     logger.debug(f'One hot encoding for {feature_name}')
     if 'id' not in df.columns:
@@ -83,6 +93,7 @@ def one_hot_encode(df, feature_name):
         logger.warning('It might not be possible to join the one-hot encoded data back with the original dataset')
     try:
         df_one_hot_encoded = pd.get_dummies(df, columns=[feature_name])
+        logger.debug(f'Successfully one-hot encoded {feature_name} column')
     except (ValueError, KeyError) as e:
         logger.error(f'Could not one-hot encode the data and got error {e}. Maybe the dataframe is empty?')
         logger.error('Terminating process prematurely')
@@ -92,11 +103,18 @@ def one_hot_encode(df, feature_name):
 
 
 # STEP 3
-def collapse_one_hot_encoded(df, index):
-    """ Takes only the columns with the one-hot encoded data and
+def collapse_one_hot_encoded(df: pd.DataFrame, index: int) -> pd.DataFrame:
+    """Takes only the columns with the one-hot encoded data and
     collapses all the one hot encoded rows for a single game onto a single row
 
     Uses the index at which the one hot encoded columns start to separate out only those rows
+
+    Args:
+        df(`pd.DataFrame`):
+        index (`int`): The index at which the one hot encoded columns start
+
+    Returns:
+        df_one_hot_collapsed (`pd.DataFrame`):
     """
     # Taking only the columns for the given feature and the id column so we can join back later
     logger.debug('Collapsing one hot encoded columns')
@@ -114,8 +132,8 @@ def collapse_one_hot_encoded(df, index):
 
 
 # STEP 4
-def merge_original_with_collapsed(df, collapsed):
-    """Merge 2 dataframes based on id column"""
+def merge_original_with_collapsed(df: pd.DataFrame, collapsed: pd.DataFrame) -> pd.DataFrame:
+    """Merge 2 dataframes based on id column and return merged DataFrame"""
 
     logger.debug('Merging with original dataframe')
     try:
@@ -128,10 +146,10 @@ def merge_original_with_collapsed(df, collapsed):
 
 
 # WRAPPER FUNCTION
-def wrapper(df, feature_name, index):
-    """
+def wrapper(df: pd.DataFrame, feature_name: str, index: int) -> pd.DataFrame:
+    """ Wrapper for the 5 steps described above
     Args:
-        df (`pd.DataFrame`):
+        df (`pd.DataFrame`): DataFrame to featurize
         feature_name (`str`): The feature to one-hot encode in a many-to-many context
         index (`int`): The column number at which the feature columns start (expect 12 for categories and 95 for mechanics)
 
@@ -152,9 +170,11 @@ def wrapper(df, feature_name, index):
     return df_with_feature
 
 
-def extract_stats(df):
+def extract_stats(df: pd.DataFrame) -> pd.DataFrame:
     """The 'stats' column in the df contains dictionaries
     This function extracts the relevant information from those dictionaries and drops the stats column
+
+    Returns the DataFrame with the extracted columns and without the stats column
     """
     logger.debug('Extracting stats into new columns from the "stats" column, which contains dictionaries columns')
     try:
@@ -221,3 +241,4 @@ if __name__ == "__main__":
     # Save results to json
     with open(args.output, 'w') as fp:
         json.dump(df_dict, fp)
+        logger.info(f'Successfully saved featurized data to {fp}')

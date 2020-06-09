@@ -4,14 +4,12 @@ then uses those ids to retrieve raw XML data from BoardGameGeek.com via their XM
 API Documentation: https://boardgamegeek.com/wiki/page/BGG_XML_API2
 """
 
-import pandas as pd
 import logging
 import sys
 import logging.config
 import argparse
 import requests
 import xml.etree.ElementTree as ET
-import time
 
 logging_config = './config/logging/local.conf'
 
@@ -23,26 +21,29 @@ except: # Fallback to basic configurations
                         level=logging.DEBUG)
 logger = logging.getLogger(__file__)
 
-def load_txt(filepath):
+
+def load_txt(filepath: str) -> list:
     """Loads a .txt file and returns contents as a list of integers"""
 
     try:
         with open(filepath, 'r') as f:
             game_ids = [int(line.rstrip('\n')) for line in f]
+            logger.debug(f'Successfully loaded game_ids from {filepath} and returned them as list of integers')
             return game_ids
     except FileNotFoundError as e:
         logger.error(f"Invalid path or didn't find game_ids at specified path; Got error: {e}")
         logger.error('Terminating process prematurely')
         sys.exit()
 
-def call_xml_api(game_id):
-    """
+
+def call_xml_api(game_id: int):
+    """Query the BoardGameGeek XML API for a game_id
 
     Args:
-        game_id:
+        game_id (`int`): the unique game_id used to query raw XML data for that game from BoardGameGeek XML API
 
     Returns:
-
+        root: XML root object
     """
     url = "https://www.boardgamegeek.com/xmlapi2/thing?"
     payload = {"id": game_id}
@@ -86,3 +87,4 @@ if __name__ == "__main__":
     # Convert XML root to tree and write to file
     tree = ET.ElementTree(root_start)
     tree.write(args.output)
+    logger.info(f'Successfully wrote the raw XML data from BoardGameGeek XML API to {args.output}')

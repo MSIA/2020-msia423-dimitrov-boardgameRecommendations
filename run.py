@@ -1,7 +1,8 @@
 """ This module combines steps from download.py, featurize.py, and model.py
-
 so that the model pipeline can be executed with a single docker run command.
 
+Data is downloaded from S3 bucket, features are created,
+and finally a KMeans algorithm is fit, generates labels, and is evaluated.
 """
 
 import logging

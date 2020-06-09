@@ -27,10 +27,9 @@ def index():
     Create view into index page that uses data queried from Track database and
     inserts it into the msiapp/templates/index.html template.
 
-    Returns: rendered html template
-
+    Returns:
+        rendered html template
     """
-    print('Executing index() function in app.route("/")')
     try:
         games = db.session.query(Boardgame).order_by(Boardgame.average_user_rating.desc()).limit(app.config["MAX_ROWS_SHOW"]).all()
         logger.debug("Index page accessed")
@@ -43,7 +42,10 @@ def index():
 
 @app.route('/add', methods=['POST'])
 def show_cluster_or_id():
-    """View that process a POST with new song input
+    """View that process a POST with input from user.
+
+    User can input game_id, game_name, or cluster_Id.
+    In each case, the Guru will retur the top 10 games in the cluster related to the entity specified by the user input.
 
     :return: redirect to index page
     """
@@ -51,7 +53,6 @@ def show_cluster_or_id():
     if request.form.get('game_id'):
         try:
             cluster = db.session.query(Boardgame.cluster).filter(Boardgame.game_id == request.form['game_id']).all()
-            print(f'THE RESULT OF CLUSTER IS: {cluster[0][0]}')
             cluster = cluster[0][0]
             games = db.session.query(Boardgame).filter(Boardgame.cluster == cluster).order_by(Boardgame.average_user_rating.desc()).limit(app.config["MAX_ROWS_SHOW"]).all()
             logger.debug("Returning 10 games")
@@ -65,7 +66,6 @@ def show_cluster_or_id():
         try:
             search_name = f"%{request.form.get('game_name')}%"
             cluster = db.session.query(Boardgame.cluster).filter(Boardgame.name.like(search_name)).first()
-            print(f'THE RESULT OF CLUSTER IS: {cluster[0]}')
             cluster = cluster[0]
             games = db.session.query(Boardgame).filter(Boardgame.cluster == cluster).order_by(Boardgame.average_user_rating.desc()).limit(app.config["MAX_ROWS_SHOW"]).all()
             logger.debug("Returning 10 games")
@@ -84,8 +84,6 @@ def show_cluster_or_id():
             traceback.print_exc()
             logger.warning("Not able to display boardgames, error page returned")
             return render_template('error.html')
-
-
 
 
 if __name__ == '__main__':

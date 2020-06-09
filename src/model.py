@@ -1,6 +1,7 @@
 import json
 import logging
 import pandas as pd
+import numpy as np
 import yaml
 import logging.config
 import argparse
@@ -21,7 +22,7 @@ except:
 logger = logging.getLogger(__file__)
 
 
-def load_featurized_data(filepath):
+def load_featurized_data(filepath: str) -> pd.DataFrame:
     """Loads json data from local filepath and returns a dictionary """
     try:
         with open(filepath) as json_file:
@@ -35,8 +36,9 @@ def load_featurized_data(filepath):
 
     return df
 
-def extract_features(df):
-    '''Drops all columns, which are not relevant features for KMeans Clustering'''
+
+def extract_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Drops all columns, which are not relevant features for KMeans Clustering"""
 
     logger.debug('Dropping columns which are not relevant features for KMeans Clustering')
     try:
@@ -49,8 +51,9 @@ def extract_features(df):
         return df
 
 
-def standardize_features(df):
-    '''Standardize Feature Matrix. Takes pd.DataFrame and returns Numpy array'''
+def standardize_features(df: pd.DataFrame) -> np.ndarray:
+    """Standardize Feature Matrix. Takes pd.DataFrame and returns Numpy array"""
+
     logger.info('Standardizing Features')
     try:
         standardized_features = StandardScaler().fit_transform(df)
@@ -61,8 +64,17 @@ def standardize_features(df):
         return df
 
 
-def fit_kmeans(X, k, seed):
-    '''Fits KMeans clustering algorithm on provided feature matrix. Returns model object'''
+def fit_kmeans(X: np.ndarray, k: int, seed: int):
+    """Fits sklearn KMeans clustering algorithm with k clusters to training data X
+
+    Args:
+        X (`np.ndarray`): Training data for KMeans
+        k (`int`): number of clusters for KMeans()
+        seed (`int`): random_state for KMeans() to ensure reproducibility
+
+    Returns:
+        kmeans: sklearn transformer object to make predictions for new data based on KMeans algorithm
+    """
 
     try:
         # Instantiate estimator
@@ -82,16 +94,28 @@ def fit_kmeans(X, k, seed):
 
 
 def model_predict(X, model):
-    '''Calculates labels for feature data based on provided model'''
+    """Calculates labels for feature data based on provided model
+
+    Args:
+        X: Data to calculate clusters for with sklearn transformer object
+        model: sklearn transformer object to be used for predictions
+
+    Returns:
+        model.labels_ : the labels predicted for X data
+    """
     logger.info('Calculating labels (clusters) for provided data')
     model.predict(X)
 
     return model.labels_
 
+
 def evaluate_silhouette(X, labels):
+    """Calculate silhouette score for X data & clustered labels"""
     return silhouette_score(X, labels)
 
+
 def combine_with_labels(df, labels):
+    """Combining clustering labels with training data"""
 
     # Taking only the relevant columns and removing the ones with the one-hot encoded features
     cols_left = list(df.columns[:12]) + list(df.columns[-6:])

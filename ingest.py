@@ -1,8 +1,8 @@
-'''This module ingests data from a local file into a database
+"""This module ingests data from a local file into a database
 
 That database can either be a local SQLite or an AWS RDS MYSQL Instance.
 
-'''
+"""
 
 import json
 from json import JSONDecodeError
@@ -19,6 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from config.flaskconfig import SQLALCHEMY_DATABASE_URI
 
 Base = declarative_base()
+
 logging_config='config/logging/local.conf'
 try: # Set Logging configurations from file
     logging.config.fileConfig(logging_config)
@@ -178,7 +179,7 @@ def get_session(engine_string=None):
     """
     logger.debug(f'Creating engine from Engine_string')
     try:
-        engine = create_engine(args.engine_string)
+        engine = create_engine(engine_string)
     except ArgumentError as e:
         logger.error(f'Could not establish engine. Is the engine string empty? Got error: {e}')
         logger.error('Terminating Process prematurely')

@@ -50,3 +50,4 @@ if __name__ == "__main__":
     with open(args.output, 'w') as file:
         for game_id in game_ids:
             file.write("%i\n" % game_id)
+        logger.info(f'Successfully saved game_ids to {file}')

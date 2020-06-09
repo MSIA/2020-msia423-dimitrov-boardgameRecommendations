@@ -218,12 +218,23 @@ First, build the Docker image. From the root of the project repository do:
 docker build -f app/Dockerfile -t web_app .
 ```
 Make sure you've set your credentials in `source config/.mysqlconfig`.
-Or, you can directly `export SQLALCHEMY_DATABASE_URI=<your url of choice>`, but beware of typos!  
+ 
 Then do:
 ```bash
 make app
 ```
-Expected behavior: the app should be running on [http://0.0.0.0:5000/ ]( http://0.0.0.0:5000/ )
+Expected behavior: the app should be running on [http://0.0.0.0:5000/ ]( http://0.0.0.0:5000/ )  
+
+If you want to use your own `SQLALCHEMY_DATABASE_URI`, then you can do:
+```bash
+export SQLALCHEMY_DATABASE_URI=<your url of choice>
+make app
+```
+or even:
+```bash
+make app SQLALCHEMY_DATABASE_URI="<your url of choice>"
+```
+NOTE! If you use the last option, please encapsulate your url in quotes.
 
 When you're done with the app:
 ```bash

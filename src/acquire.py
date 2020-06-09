@@ -28,6 +28,7 @@ import pandas as pd
 import argparse
 import logging
 import logging.config
+from urllib.error import HTTPError
 
 from boardgamegeek import BGGClient
 from boardgamegeek.exceptions import BGGApiError, BGGError, BGGItemNotFoundError, BGGValueError
@@ -53,7 +54,14 @@ def fetch_game_ids(url: str) -> list:
     Returns:
         ids (`numpy.ndarray`): numpy array with game ids
     """
-    df = pd.read_csv(url)
+    try:
+        df = pd.read_csv(url)
+        logger.info(f'Successfully fetched game ids from {url}')
+    except HTTPError as e:
+        logger.error(f'Failed to retrieve game ids from {url} and got an HTTP error: {e}. Check that the url is properly formatted')
+        logger.error('Terminating process prematurely')
+        sys.exit()
+
     ids = df['ID'].values
     return ids
 
@@ -193,6 +201,7 @@ if __name__ == "__main__":
     # Save results to json
     with open(args.output, 'w') as fp:
         json.dump(dict_games, fp)
+        logger.info(f'Successfully saved games.json data to {fp}')
 
 
 
