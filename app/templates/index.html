@@ -2,42 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link href="static/basic.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 </head>
 
 <body>
+    <h2>
+        <div>
+            <img src="https://raw.githubusercontent.com/MSIA/2020-msia423-dimitrov-boardgameRecommendations/development/app/static/logo.png?token=AMXEJMFS3C3PDSFNOS5YVC264MCYM" alt="BoardGameGuru" height=80>
+            <a href = "{{ url_for('index') }}">BoardGameGuru: A Boardgame Recommendation System</a>
+        </div>
+    </h2>
     <h3>
-         <a href = "{{ url_for('index') }}">Penny Lane Music Recommender</a>
+        <div>
+            <p> How to question the Guru? </p>
+            <p> Enter a Game Name below and hit "Ask". The Guru will tell you the top 10 games in that game's cluster.</p>
+            <p> Or, enter a cluster ID and the Guru will tell you the top 10 games in that cluster.</p>
+        </div>
     </h3>
 
+    <form action="{{ url_for('show_cluster_or_id') }}" method=post class=show-cluster-or-id>
+      <dl>
+          <input type=text size=15 name=game_id placeholder="Game ID">
+          <input type=text size=15 name=game_name placeholder="Game Name">
+          <input type=text size=15 name=cluster_id placeholder="Cluster ID">
+          <input type=submit class="btn btn-primary" value=Ask>
+      </dl>
+    </form>
     <hr/>
-    <table>
+    <table class="table table-striped table-hover" border="1" style="border:#1f1d1d ; text-align: center; vertical-align: center">
          <thead>
             <tr>
-               <th>Title</th>
-               <th>Artist</th>
-               <th>Album</th>
+                <th>Game Id</th>
+                <th>Game Name</th>
+                <th>Average User Score</th>
+                <th>Cluster Id</th>
+                <th>Thumbnail</th>
+                <th>Avg. Complexity</th>
+                <th># users own</th>
+                <th>Year Published</th>
+                <th>Min. Age</th>
+                <th>BoardGameGeek.com Link</th>
+                <th>Description</th>
             </tr>
          </thead>
 
          <tbody>
-            {% for track in tracks %}
+            {% for game in games %}
                <tr>
-                   <td>{{ track.title }}</td>
-                   <td>{{ track.artist }}</td>
-                   <td>{{ track.album }}</td>
+                   <td>{{ game.game_id }}</td>
+                   <td>{{ game.name }}</td>
+                   <td>{{ game.average_user_rating }}</td>
+                   <td>{{ game.cluster }}</td>
+                   <td><img alt={{ game.name }} src={{ game.thumbnail }} height=50></td>
+                   <td>{{ game.average_user_rating_weight }}/5</td>
+                   <td>{{ game.number_of_users_own }}</td>
+                   <td>{{ game.year_published}}</td>
+                   <td>{{ game.min_age}}</td>
+                   <td><a href="https://boardgamegeek.com/boardgame/{{ game.game_id }}">link</a></td>
+                   <td><textarea rows = "3" cols = "40" maxlength = "100" name = "description">
+                            {{ game.description }}
+                        </textarea></td>
                </tr>
             {% endfor %}
          </tbody>
       </table>
-      <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
-      <dl>
-        <input type=text size=15 name=title placeholder="Title">
-        <input type=text size=15 name=artist placeholder="Artist">
-        <input type=text size=15 name=album placeholder="Album">
-        <input type=submit value=Add>
-      </dl>
-    </form>
 
+{# Bootstrap Imports for JS #}
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>

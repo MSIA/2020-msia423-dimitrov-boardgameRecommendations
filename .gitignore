@@ -7,10 +7,11 @@ __pycache__/
 .log
 .ipynb_checkpoints/
 
+config/aws_credentials.env
+config/.mysqlconfig
 
-data/*
 !data/sample/
-!data/external/
+!data/external/*
 config/local
 !.gitkeep
 .RHistory

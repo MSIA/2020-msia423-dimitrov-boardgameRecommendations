@@ -1,0 +1,30 @@
+# Configurations for acquire.py, which fetches game_ids and raw XML/JSON data from Boardgamegeek's API
+acquire:
+  fetch_game_ids:
+    url: "https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv"
+  batch_api_call:
+    batch_size: 100
+    requests_per_minute: 100
+
+# Configurations for upload.py, which uploads data to S3
+upload:
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'games.json'
+
+# Configurations for download.py, which downloads data from S3
+download:
+  bucket_name: 'msia423-ktd5131-project-bucket'
+  key: 'games.json'
+
+# Configurations for featurize.py, which generated features from the stats, mechanics, and categories columns in the data
+featurize:
+  # This is the index at which the one-hot encoded categories start; See One-Hot notebook for details
+  index_categories: 12
+  # This is the index at which the one-hot encoded mechanics start; See One-Hot notebook for details
+  index_mechanics: 95
+
+# Configurations for model.py, which fits a KMeans model to the featurized data
+model:
+  kmeans:
+    seed: 28
+    k: 250

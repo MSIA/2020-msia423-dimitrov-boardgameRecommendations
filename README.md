@@ -1,27 +1,34 @@
-# MSiA423 - Analytics Value Chain - Boardgame Recommendations
-## Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
+<img src="app/static/logo.png" alt="BoardGameGuru logo" height="120"/>
+
+# BoardGameGuru: "The Guru to your Geek" 
+# A Boardgame Recommendation Engine
+## MSiA423 - Analytics Value Chain 
+### Owner: Kristiyan Dimitrov; QA: Shreyashi Ganguly
 
 <!-- toc -->
 
-- [Directory structure](#directory-structure)
+- [JUMP TO RECREATING THE APP](#quickest-way-to-recreate-app)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
   * [Mission](#mision)
   * [Success Criteria](#success-criteria)
 - [Project Backlog](#project-backlog)
-- [Running the app](#running-the-app)
-  * [1. Initialize the database](#1-initialize-the-database)
-    + [Create the database with a single song](#create-the-database-with-a-single-song)
-    + [Adding additional songs](#adding-additional-songs)
-    + [Defining your engine string](#defining-your-engine-string)
-      - [Local SQLite database](#local-sqlite-database)
-  * [2. Configure Flask app](#2-configure-flask-app)
-  * [3. Run the Flask app](#3-run-the-flask-app)
-- [Running the app in Docker](#running-the-app-in-docker)
-  * [1. Build the image](#1-build-the-image)
-  * [2. Run the container](#2-run-the-container)
-  * [3. Kill the container](#3-kill-the-container)
+- [Project Icebox](#project-icebox)
+- [Directory Structure](#directory-structure)
+- [Quickest Way to Recreate Model Pipeline & the App](#quickest-way-to-recreate-app)
+  * [0. Setup](#0-vpn-docker-and-building-the-docker-image)
+  * [1. Acquire data from API and upload to S3 bucket](#1-acquire-data-from-api-and-upload-to-s3-bucket)
+  * [2. Download data from S3, generate features, and train clustering algorithm](#2-download-data-from-s3-generate-features-and-train-clustering-algorithm)
+  * [3.1 SQLite](#31-using-sqlite)
+  * [3.2 RDS MySQL](#32-using-rds)
+  * [4. Run the Flask App](#4-run-the-flask-app)
+- [Additional Functionality](#additional-functionality)
+  * [1. Raw XML Data from API](#1-raw-xml-data-api)
+  * [2. Querying my RDS Instance](#2-querying-my-rds-instance)
+  * [3. Other Make Commands for a step-by-step workflow & Configurations](#3-other-make-commands-for-a-step-by-step-workflow--configurations)
+  * [4. Diagrams](#4-diagrams)
+  * [5. References](#5-references)
 
 <!-- tocstop -->
 
@@ -30,28 +37,28 @@
 More people playing boardgames they love.
 
 ### Problem Statement
-The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec). In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_. With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world.
+The number of boardgames published each year is [growing exponentially](https://medium.com/@Juliev/the-rise-of-board-games-a7074525a3ec).  
+In 2015 alone, there were ~3,400 games published. That's almost 10 games _per day_.   
+With such an overwhelming amount of games to choose from it can be difficult to find one you’ll like, even if you're a seasoned veteran of the boardgame world.
 
 ### Mission
-Provide a personalized boardgame recommendation system, which helps people discover games they will enjoy.
+Provide a boardgame recommendation system, which helps people discover games they will enjoy.
 
-The key characteristic here is _personalized_. Currently, there are boardgame conferences, YouTube channels that review boardgames, boardgame stores, and ranking websites such as BoardGameGeek.com (“The IMDB of boardgames”). These help address the problem, but are either expensive or their opinions are subjective.
+Currently, there are boardgame conferences, YouTube channels that review boardgames, boardgame stores, and ranking websites such as BoardGameGeek.com (“The IMDB of boardgames”).  
+These help address the problem, but are either expensive, their opinions are subjective, or don't provide information in a structured way.
 
-There are two relevant data sources, both of which originate from BoardGameGeek.com.
-Several Kaggle datasets containing ratings, reviews, and other game information:
-- [Dataset 1](https://www.kaggle.com/gabrio/board-games-dataset), [Dataset 2](https://www.kaggle.com/jvanelteren/boardgamegeek-reviews), [Dataset 3](https://www.kaggle.com/mrpantherson/board-game-data), [Dataset 4](https://www.kaggle.com/extralime/20000-boardgames-dataset)
+BoardGameGuru utilizes two data sources, both of which originate from BoardGameGeek.com:
 - [Boardgamegeek XML API](https://boardgamegeek.com/wiki/page/BGG_XML_API#); [Boardgamegeek XML API 2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
-
+- [Game ids for 17,313 games from beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
 ### Success Criteria
 - Business:
   - % positive user ratings of recommendations ("Did you like this recommendation?")
   - Click-Through-Rate to boardgamegeek.com and/or YouTube reviews (Users will be presented with links to learn more about the recommended game)
   - Avg. Time on Site and/or Avg. Number of Recommendations Requested (measured via Google Analytics)
 - Statistical
-  - Average RMSE of user ratings via cross-validation
-  - Rank based metrics capturing relative preference: mRR, mAP, nDCG
   - % of variation explained (for Principal Components Analysis)
   - Clustering SSE (if the current categorization of games is not adequate)
+  - Silhouette Score
 
 ## Project Backlog
 <img src="figures/backlogStructure.png" alt="backlogStructure" width="170" height="110"/>
@@ -93,6 +100,9 @@ __Make recommendations/predictions for boardgames the user will like.__
 ## Project Icebox
 
 Visualize boardgame segmentation
+- Add links to YouTube reviews for each game
+- Allow users to rate the provided recommendations i.e. implement a feedback loop
+- Implement Google Analytics on the website
 - Build a D3 Visualization for the clustering segmentation
 - Enable export of cluster segmentation
 
@@ -142,104 +152,192 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ├── run.py                            <- Simplifies the execution of one or more of the src scripts  
 ├── requirements.txt                  <- Python package dependencies
 ```
-
-## Running the app
-### 1. Initialize the database
-
-#### Create the database with a single song
-To create the database in the location configured in `config.py` with one initial song, run:
-
-`python run.py create_db --engine_string=<engine_string> --artist=<ARTIST> --title=<TITLE> --album=<ALBUM>`
-
-By default, `python run.py create_db` creates a database at `sqlite:///data/tracks.db` with the initial song *Radar* by Britney spears.
-#### Adding additional songs
-To add an additional song:
-
-`python run.py ingest --engine_string=<engine_string> --artist=<ARTIST> --title=<TITLE> --album=<ALBUM>`
-
-By default, `python run.py ingest` adds *Minor Cause* by Emancipator to the SQLite database located in `sqlite:///data/tracks.db`.
-
-#### Defining your engine string
-A SQLAlchemy database connection is defined by a string with the following format:
-
-`dialect+driver://username:password@host:port/database`
-
-The `+dialect` is optional and if not provided, a default is used. For a more detailed description of what `dialect` and `driver` are and how a connection is made, you can see the documentation [here](https://docs.sqlalchemy.org/en/13/core/engines.html). We will cover SQLAlchemy and connection strings in the SQLAlchemy lab session on
-##### Local SQLite database
-
-A local SQLite database can be created for development and local testing. It does not require a username or password and replaces the host and port with the path to the database file:
-
-```python
-engine_string='sqlite:///data/tracks.db'
-
-```
-
-The three `///` denote that it is a relative path to where the code is being run (which is from the root of this directory).
-
-You can also define the absolute path with four `////`, for example:
-
-```python
-engine_string = 'sqlite://///Users/cmawer/Repos/2020-MSIA423-template-repository/data/tracks.db'
-```
-
-
-### 2. Configure Flask app
-
-`config/flaskconfig.py` holds the configurations for the Flask app. It includes the following configurations:
-
-```python
-DEBUG = True  # Keep True for debugging, change to False when moving to production
-LOGGING_CONFIG = "config/logging/local.conf"  # Path to file that configures Python logger
-HOST = "0.0.0.0" # the host that is running the app. 0.0.0.0 when running locally
-PORT = 5000  # What port to expose app on. Must be the same as the port exposed in app/Dockerfile
-SQLALCHEMY_DATABASE_URI = 'sqlite:///data/tracks.db'  # URI (engine string) for database that contains tracks
-APP_NAME = "penny-lane"
-SQLALCHEMY_TRACK_MODIFICATIONS = True
-SQLALCHEMY_ECHO = False  # If true, SQL for queries made will be printed
-MAX_ROWS_SHOW = 100 # Limits the number of rows returned from the database
-```
-
-### 3. Run the Flask app
-
-To run the Flask app, run:
-
+## Quickest way to recreate Model Pipeline & App
+If you want to recreate my model and build the app as quickly as possible, then:
+- Make sure you've exported your AWS credentials - `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY`.
+- Make sure you've exported `SQLALCHEMY_DATABASE_URI`.
+- Build the pipeline image:
 ```bash
-python app.py
+docker build -t python_env .
 ```
-
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
-
-## Running the app in Docker
-
-### 1. Build the image
-
-The Dockerfile for running the flask app is in the `app/` folder. To build the image, run from this directory (the root of the repo):
-
+- Build the web app image:
 ```bash
- docker build -f app/Dockerfile -t pennylane .
+docker build -f app/Dockerfile -t web_app .
 ```
-
-This command builds the Docker image, with the tag `pennylane`, based on the instructions in `app/Dockerfile` and the files existing in this directory.
-
-### 2. Run the container
-
-To run the app, run from this directory:
-
+- Run the model pipeline:
 ```bash
-docker run -p 5000:5000 --name test pennylane
+make pipeline
 ```
-You should now be able to access the app at http://0.0.0.0:5000/ in your browser.
-
-This command runs the `pennylane` image as a container named `test` and forwards the port 5000 from container to your laptop so that you can access the flask app exposed through that port.
-
-If `PORT` in `config/flaskconfig.py` is changed, this port should be changed accordingly (as should the `EXPOSE 5000` line in `app/Dockerfile`)
-
-### 3. Kill the container
-
-Once finished with the app, you will need to kill the container. To do so:
-
+- Run the Flask app:
+```bash
+make app
+```
+When you're done with the app:
 ```bash
 docker kill test
+docker rm /test
 ```
 
-where `test` is the name given in the `docker run` command.
+For a step-by-step workflow with more options (including using your own RDS instance), read on.
+
+### 0. VPN, DOCKER, and building the docker image
+First, make sure you are connected to Northwestern VPN and Docker is running.  
+Then, build the docker image by executing the following command in the root directory of the project
+```bash
+docker build -t python_env .
+```
+
+### 1. Acquire data from API and upload to S3 bucket
+I've already done this, so if I've given you access to my S3 bucket, you can skip to the next step!
+```bash
+make upload_data
+```
+Note: The S3 bucket to upload to is configurable in `config/config.yml`
+
+### 2. Download data from S3, generate features, and train clustering algorithm
+- First, make sure that your AWS credentials - `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` - are exported as environment variables.  
+Then:
+```bash
+make pipeline
+```
+Expected result:
+- Data is downloaded from S3 bucket to `data/games.json`.   
+Location is configurable by specifying `DOWNLOAD_PATH=<local filepath>` after `make pipeline`.
+- Data is featurized and a KMeans clustering algorithm is trained on the featurized data.  
+Model is saved to `models/kmeans.pkl`. The location is configurable by specifying `MODEL_OUTPUT_PATH=<local filepath>` after `make pipeline`.
+- Model is evaluated based on Silhouette score and value is saved to `model/kmeans.txt` or next to the .pkl file if you specified `MODEL_OUTPUT_PATH`.  
+Note: Model hyperparameters (K & random seed) can be configured in `config/config.yml`. I don't recommend changing K, because testing has shown 250 to be optimal.  
+- Final dataset with cluster ids saved to `data/games_clustered.json`.  
+Location is configurable by specifying `CLUSTERED_DATA_PATH=<local filepath>` after `make pipeline`.
+
+### 3. Ingest the data to a local SQLite database OR RDS database
+#### 3.1 Using SQLite
+If you want to use an RDS instance, then go to section 3.2.
+If you want to use a local SQLite database with the app, then you need to export `SQLALCHEMY_DATABASE_URI`:
+
+```bash
+export SQLALCHEMY_DATABASE_URI=sqlite:///data/boardgames.db
+```
+Then do:
+
+```bash
+make ingest_data_sqlite
+```
+
+Expected result:
+- `data/boardgames.db` is created.
+- 15,739 game records are ingested into it.
+
+#### 3.2 Using RDS
+If you want to use a local SQLite database, look at the previous section, 3.1.
+Before creating a table in RDS and ingesting the data you need to make sure you've exported your AWS credentials as described in section 2 above.  
+Then do:
+```bash
+export SQLALCHEMY_DATABASE_URI={dialect}://{user}:{pw}@{host}:{port}/{db}
+```
+If you want a step-by-step definition of the above variable, you can build it in `config/.mysqlconfig`  
+then `source config/.mysqlconfig`
+
+- Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance.
+- If it doesn't, create it: mysql> `CREATE DATABASE <MYSQL_DATABASE>`
+
+and finally:
+```bash
+make ingest_data_rds
+```
+### 4. Run the Flask App
+First, build the Docker image. From the root of the project repository do:
+
+```bash
+docker build -f app/Dockerfile -t web_app .
+```
+Make sure you've exported your AWS credentials and `SQLALCHEMY_DATABASE_URI` as described above.
+ 
+Then do:
+```bash
+make app
+```
+Expected behavior: the app should be running on [http://0.0.0.0:5000/ ]( http://0.0.0.0:5000/ )  
+
+It's even possible to do:
+```bash
+make app SQLALCHEMY_DATABASE_URI="<your url of choice>"
+```
+NOTE! If you use the last option, please encapsulate your url in quotes.
+
+When you're done with the app:
+```bash
+docker kill test
+docker rm /test
+```
+## Additional Functionality
+
+### 1. Raw XML data API
+Note: the regular workflow does not use the raw XML data.  
+I interact with the API via a wrapper provided by the boardgamegeek2 package.  
+The raw XML data from the API is included in the repo. More specifically:
+- `data/game_ids.txt`: Game ids for 17,313 games from [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
+- `data/raw_data.xml`: Raw XML response data as retrieved from [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
+- If you want to get up-to-date raw XML responses, first delete the current data by doing:
+```bash
+make clean_raw_data
+```
+This will remove `data/game_ids.txt` & `data/raw_data.xml`.  
+Then, do:
+```bash
+make raw_xml
+```
+Alternatively, if you want to get raw XML data *and* upload it to your S3 bucket:
+- You will need to set your S3 bucket's name in `config/config_game_ids.yml` and `config/config_raw_xml.yml`.
+- Then:
+```bash
+make upload_raw_data
+```
+
+### 2. Querying my RDS Instance
+If you want to query the boardgames data from my RDS instance then you will need to:
+- Have me tell you my RDS host
+- Have me create a user & password with SELECT privilages for my database
+- Enter these values in `config/.mysqlconfig` and do:
+```bash
+source config/.mysqlconfig
+```
+- Finally, to establish a connection with my RDS instance, do:
+```bash
+docker run -it --rm mysql:latest mysql -h${MYSQL_HOST} -u${MYSQL_USER} -p${MYSQL_PASSWORD}
+```
+Expected result: You should see a `mysql>` prompt and `SHOW DATABASES` should list `msia423_first_db`.
+
+### 3. Other Make Commands for a step-by-step workflow & Configurations
+
+- The Makefile gives several shorthands for executing intermediate steps in each workflow (SQLite & RDS)
+* `make raw_data_from_api` acquires data from API to local system
+* `make upload_data` uploads data to S3 bucket specified in config/config.yml
+* `make download_data` downloads data from S3 bucket specified in config/config.yml
+* `make create_db_sqlite` creates `data/boardgames.db` (but doesn't ingest data).
+* `make create_db_rds` creates the `boardgames` in the RDS instance specified in `config/.mysqlconfig` (but doesn't ingest data).
+- You can modify the default filepaths for the `make` commands:
+* `OUTPUT_PATH=<where to place data from API>`. Default: `data/external/games.json`.
+* `UPLOAD_PATH=<where is the file to be uploaded to S3>`. Default: `data/external/games.json`.
+* `DOWNLOAD_PATH=<where to download the data from S3>`. Default: `data/games.json`.
+* `AWS_CREDENTIALS=<where to look for AWS key & secret key`. Default: `config/aws_credentials.env`.
+* `CONFIG_PATH=<where to look for config.yml>`. Default: `config/config.yml`.
+- You can change the `batch_size` & `requests_per_minute` parameters of the API client.
+This, however, is not recommended, because BoardGameGeek throttles excessive requests.
+The defauts (100 for both variables) should be sufficient.
+- You can change the logging level in `config/logging/local.conf`. Default: `INFO`
+
+### 4. Diagrams
+This is a graph representation of all the make commands that are available and the dependencies between them:  
+<img src="figures/diagram.png" alt="diagram.png" height="550"/>
+
+Note: the arrows represent dependencies. The workflow starts from the left and progresses to the right.
+
+Below is a diagram of the architecture of the app.
+<img src="figures/App_Architecture.png" alt="App_Architecture.png"/>
+
+### 5. References
+
+- [BoardGameGeek.com's XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2)
+- [boardgamegeek2 API wrapper for the above API](https://lcosmin.github.io/boardgamegeek/modules.html)
+- [beefsack's GitHub](https://raw.githubusercontent.com/beefsack/bgg-ranking-historicals/master/2019-07-08.csv)
