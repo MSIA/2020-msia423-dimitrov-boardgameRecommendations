@@ -165,8 +165,10 @@ I've already done this, so if I've given you access to my S3 bucket, you can ski
 make upload_data
 ```
 Note: The S3 bucket to upload to is configurable in `config/config.yml`
+
 ### 2. Download data from S3, generate features, and train clustering algorithm
-- First, set your AWS credentials in `config/aws_credentials.env`. Then do:
+- First, make sure that your AWS credentials - `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY` - are exported as environment variables.  
+Then:
 ```bash
 make pipeline
 ```
@@ -182,12 +184,13 @@ Location is configurable by specifying `CLUSTERED_DATA_PATH=<local filepath>` af
 
 ### 3. Ingest the data to a local SQLite database OR RDS database
 #### 3.1 Using SQLite
-By default, the local SQLite database will be created in data/boardgames.db.  
-If you want to create the db in an alternative location, first do:
+If you want to use an RDS instance, then go to section 3.2.
+If you want to use a local SQLite database with the app, then you need to export `SQLALCHEMY_DATABASE_URI`:
+
 ```bash
-export SQLALCHEMY_DATABASE_URI=sqlite:///<your alternative location>
+export SQLALCHEMY_DATABASE_URI=sqlite:///data/boardgames.db
 ```
-If the defaults are ok for you, then just directly do:
+Then do:
 
 ```bash
 make ingest_data_sqlite
@@ -195,18 +198,22 @@ make ingest_data_sqlite
 
 Expected result:
 - `data/boardgames.db` is created.
-- 15,739 game records are ingested to it.
+- 15,739 game records are ingested into it.
 
 #### 3.2 Using RDS
+If you want to use a local SQLite database, look at the previous section, 3.1.
 Before creating a table in RDS and ingesting the data you need to:
-- Set your AWS credentials in `config/aws_credentials.env`.
-- Configure your RDS variables in `config/.mysqlconfig`.
+- Make sure you've exported your AWS credentials as described in section 2 above.  
+Then do:
+```bash
+export SQLALCHEMY_DATABASE_URI={dialect}://{user}:{pw}@{host}:{port}/{db}
+```
+If you want a step-by-step definition of the above variable, you can build it in `config/.mysqlconfig`  
+then `source config/.mysqlconfig`
+
 - Make sure the database you specify as `MYSQL_DATABASE` already exists on your RDS instance.
 - If it doesn't, create it: mysql> `CREATE DATABASE <MYSQL_DATABASE>`
-- Then:
-```bash
-source config/.mysqlconfig
-```
+
 and finally:
 ```bash
 make ingest_data_rds
@@ -217,7 +224,7 @@ First, build the Docker image. From the root of the project repository do:
 ```bash
 docker build -f app/Dockerfile -t web_app .
 ```
-Make sure you've set your credentials in `source config/.mysqlconfig`.
+Make sure you've exported your AWS credentials and `SQLALCHEMY_DATABASE_URI` as described above.
  
 Then do:
 ```bash
@@ -225,12 +232,7 @@ make app
 ```
 Expected behavior: the app should be running on [http://0.0.0.0:5000/ ]( http://0.0.0.0:5000/ )  
 
-If you want to use your own `SQLALCHEMY_DATABASE_URI`, then you can do:
-```bash
-export SQLALCHEMY_DATABASE_URI=<your url of choice>
-make app
-```
-or even:
+It's even possible to do:
 ```bash
 make app SQLALCHEMY_DATABASE_URI="<your url of choice>"
 ```

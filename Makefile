@@ -26,7 +26,7 @@ download_data: data/games.json
 
 ### SINGLE DOCKER RUN COMMAND FOR DOWNLOAD, FEATURIZE, and TRAIN MODEL #######
 pipeline:
-	docker run --env-file=${AWS_CREDENTIALS} --mount type=bind,source="`pwd`",target=/app/ python_env run.py -lfp=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
+	docker run -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY --mount type=bind,source="`pwd`",target=/app/ python_env run.py -lfp=${DOWNLOAD_PATH} -c=${CONFIG_PATH} -o=${CLUSTERED_DATA_PATH} -mo=${MODEL_OUTPUT_PATH}
 
 
 ### FEATURE GENERATION & MODELLING
@@ -58,7 +58,7 @@ ingest_data_rds: create_db_rds
 
 ### FLASK APP
 app:
-	docker run -it -e SQLALCHEMY_DATABASE_URI=${SQLALCHEMY_DATABASE_URI} -e MYSQL_USER=${MYSQL_USER} -e MYSQL_PASSWORD=${MYSQL_PASSWORD} -e MYSQL_HOST=${MYSQL_HOST} -e MYSQL_PORT=${MYSQL_PORT} -e MYSQL_DATABASE=${MYSQL_DATABASE} --mount type=bind,source="`pwd`",target=/app/ -p 5000:5000 --name test web_app
+	docker run -it -e SQLALCHEMY_DATABASE_URI --mount type=bind,source="`pwd`",target=/app/ -p 5000:5000 --name test web_app
 
 ### UNIT TESTS
 tests:
