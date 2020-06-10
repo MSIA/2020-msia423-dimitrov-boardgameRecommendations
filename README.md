@@ -16,7 +16,8 @@
 - [Project Backlog](#project-backlog)
 - [Project Icebox](#project-icebox)
 - [Directory Structure](#directory-structure)
-- [Quickest Way to Recreate the App](#quickest-way-to-recreate-app)
+- [Quickest Way to Recreate Model Pipeline & the App](#quickest-way-to-recreate-app)
+  * [0. Setup](#0-vpn-docker-and-building-the-docker-image)
   * [1. Acquire data from API and upload to S3 bucket](#1-acquire-data-from-api-and-upload-to-s3-bucket)
   * [2. Download data from S3, generate features, and train clustering algorithm](#2-download-data-from-s3-generate-features-and-train-clustering-algorithm)
   * [3.1 SQLite](#31-using-sqlite)
@@ -151,8 +152,35 @@ Disclaimer: a [similar tool](https://apps.quanticfoundry.com/recommendations/tab
 ├── run.py                            <- Simplifies the execution of one or more of the src scripts  
 ├── requirements.txt                  <- Python package dependencies
 ```
-## Quickest way to recreate App
+## Quickest way to recreate Model Pipeline & App
+If you want to recreate my model and build the app as quickly as possible, then:
+- Make sure you've exported your AWS credentials - `AWS_ACCESS_KEY_ID` & `AWS_SECRET_ACCESS_KEY`.
+- Make sure you've exported `SQLALCHEMY_DATABASE_URI`.
+- Build the pipeline image:
+```bash
+docker build -t python_env .
+```
+- Build the web app image:
+```bash
+docker build -f app/Dockerfile -t web_app .
+```
+- Run the model pipeline:
+```bash
+make pipeline
+```
+- Run the Flask app:
+```bash
+make app
+```
+When you're done with the app:
+```bash
+docker kill test
+docker rm /test
+```
 
+For a step-by-step workflow with more options (including using your own RDS instance), read on.
+
+### 0. VPN, DOCKER, and building the docker image
 First, make sure you are connected to Northwestern VPN and Docker is running.  
 Then, build the docker image by executing the following command in the root directory of the project
 ```bash
@@ -202,8 +230,7 @@ Expected result:
 
 #### 3.2 Using RDS
 If you want to use a local SQLite database, look at the previous section, 3.1.
-Before creating a table in RDS and ingesting the data you need to:
-- Make sure you've exported your AWS credentials as described in section 2 above.  
+Before creating a table in RDS and ingesting the data you need to make sure you've exported your AWS credentials as described in section 2 above.  
 Then do:
 ```bash
 export SQLALCHEMY_DATABASE_URI={dialect}://{user}:{pw}@{host}:{port}/{db}
