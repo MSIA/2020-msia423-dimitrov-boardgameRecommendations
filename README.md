@@ -7,7 +7,7 @@
 
 <!-- toc -->
 
-- [JUMP TO RECREATING THE APP](#quickest-way-to-recreate-app)
+- [JUMP TO RECREATING THE APP](#quickest-way-to-recreate-model-pipeline--app)
 - [Project Charter](#project-charter)
   * [Vision](#vision)
   * [Problem Statement](#problem-statement)
@@ -16,7 +16,7 @@
 - [Project Backlog](#project-backlog)
 - [Project Icebox](#project-icebox)
 - [Directory Structure](#directory-structure)
-- [Quickest Way to Recreate Model Pipeline & the App](#quickest-way-to-recreate-app)
+- [Quickest Way to Recreate Model Pipeline & the App](#quickest-way-to-recreate-model-pipeline--app)
   * [0. Setup](#0-vpn-docker-and-building-the-docker-image)
   * [1. Acquire data from API and upload to S3 bucket](#1-acquire-data-from-api-and-upload-to-s3-bucket)
   * [2. Download data from S3, generate features, and train clustering algorithm](#2-download-data-from-s3-generate-features-and-train-clustering-algorithm)
